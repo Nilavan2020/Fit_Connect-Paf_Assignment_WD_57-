@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-PafApplication<paf>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.IT_JUN_WE_55_team.paf.PafApplication",
+            "projectName": "paf",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
