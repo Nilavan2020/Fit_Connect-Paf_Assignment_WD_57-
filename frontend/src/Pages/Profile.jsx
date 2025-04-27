@@ -255,15 +255,18 @@ const Profile = () => {
         }
       );
 
-      if (response.status === 200) {
-        setUser(response.data);
+      if (response.data.success) {
+        setUser(response.data.data);
         setPreviewImage(null);
         setSelectedImage(null);
         toast.success("Profile image updated successfully");
+      } else {
+        toast.error(response.data.message || "Failed to upload profile image");
       }
     } catch (error) {
       console.error("Error uploading image:", error);
-      toast.error(error.response?.data || "Failed to upload profile image");
+      const errorMessage = error.response?.data?.message || "Failed to upload profile image";
+      toast.error(errorMessage);
     }
   };
 

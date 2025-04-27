@@ -14,6 +14,8 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class UserService {
@@ -21,15 +23,29 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
+    private Map<String, Object> createErrorResponse(String message) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("message", message);
+        return response;
+    }
+
+    private Map<String, Object> createSuccessResponse(Object data) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", data);
+        return response;
+    }
+
     public ResponseEntity<Object> createUser(User user) {
         try {
             if (userRepository.findByEmail(user.getEmail()) != null) {
-                return ResponseEntity.badRequest().body("Email already exists");
+                return ResponseEntity.badRequest().body(createErrorResponse("Email already exists"));
             }
             userRepository.save(user);
-            return ResponseEntity.ok().body("User created successfully");
+            return ResponseEntity.ok().body(createSuccessResponse("User created successfully"));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error creating user: " + e.getMessage());
+            return ResponseEntity.badRequest().body(createErrorResponse("Error creating user: " + e.getMessage()));
         }
     }
 
@@ -43,7 +59,7 @@ public class UserService {
             userDTO.setEmail(user.getEmail());
             userDTO.setProfileImage(user.getProfileImage());
             userDTO.setMobileNumber(user.getMobileNumber());
-            userDTO.setSource(user.getSource());
+            userDTO.setSource(user.getSource().toString());
             userDTO.setFollowedUsers(user.getFollowedUsers());
             userDTO.setFollowingUsers(user.getFollowingUsers());
             userDTO.setFollowersCount(user.getFollowersCount());
@@ -63,7 +79,7 @@ public class UserService {
                     userDTO.setEmail(user.getEmail());
                     userDTO.setProfileImage(user.getProfileImage());
                     userDTO.setMobileNumber(user.getMobileNumber());
-                    userDTO.setSource(user.getSource());
+                    userDTO.setSource(user.getSource().toString());
                     userDTO.setFollowedUsers(user.getFollowedUsers());
                     userDTO.setFollowingUsers(user.getFollowingUsers());
                     userDTO.setFollowersCount(user.getFollowersCount());
@@ -79,7 +95,7 @@ public class UserService {
             Optional<User> followedUserOptional = userRepository.findById(followedUserId);
 
             if (userOptional.isEmpty() || followedUserOptional.isEmpty()) {
-                return ResponseEntity.badRequest().body("User not found");
+                return ResponseEntity.badRequest().body(createErrorResponse("User not found"));
             }
 
             User user = userOptional.get();
@@ -92,14 +108,14 @@ public class UserService {
             if (user.getFollowingUsers().contains(followedUserId)) {
                 user.getFollowingUsers().remove(followedUserId);
                 userRepository.save(user);
-                return ResponseEntity.ok().body("User unfollowed successfully");
+                return ResponseEntity.ok().body(createSuccessResponse("User unfollowed successfully"));
             } else {
                 user.getFollowingUsers().add(followedUserId);
                 userRepository.save(user);
-                return ResponseEntity.ok().body("User followed successfully");
+                return ResponseEntity.ok().body(createSuccessResponse("User followed successfully"));
             }
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error following user: " + e.getMessage());
+            return ResponseEntity.badRequest().body(createErrorResponse("Error following user: " + e.getMessage()));
         }
     }
 
@@ -107,10 +123,10 @@ public class UserService {
         try {
             User user = userRepository.findByEmail(email);
             if (user == null) {
-                return ResponseEntity.badRequest().body("User not found");
+                return ResponseEntity.badRequest().body(createErrorResponse("User not found"));
             }
             if (!user.getPassword().equals(password)) {
-                return ResponseEntity.badRequest().body("Invalid password");
+                return ResponseEntity.badRequest().body(createErrorResponse("Invalid password"));
             }
             UserDTO userDTO = new UserDTO();
             userDTO.setId(user.getId());
@@ -118,35 +134,35 @@ public class UserService {
             userDTO.setEmail(user.getEmail());
             userDTO.setProfileImage(user.getProfileImage());
             userDTO.setMobileNumber(user.getMobileNumber());
-            userDTO.setSource(user.getSource());
+            userDTO.setSource(user.getSource().toString());
             userDTO.setFollowedUsers(user.getFollowedUsers());
             userDTO.setFollowingUsers(user.getFollowingUsers());
             userDTO.setFollowersCount(user.getFollowersCount());
             userDTO.setFollowingCount(user.getFollowingCount());
-            return ResponseEntity.ok().body(userDTO);
+            return ResponseEntity.ok().body(createSuccessResponse(userDTO));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error logging in: " + e.getMessage());
+            return ResponseEntity.badRequest().body(createErrorResponse("Error logging in: " + e.getMessage()));
         }
     }
 
     public ResponseEntity<Object> uploadProfileImage(String userId, MultipartFile image) {
         try {
             if (image == null || image.isEmpty()) {
-                return ResponseEntity.badRequest().body("No image file provided");
+                return ResponseEntity.badRequest().body(createErrorResponse("No image file provided"));
             }
 
             if (image.getSize() > 5 * 1024 * 1024) { // 5MB limit
-                return ResponseEntity.badRequest().body("Image size exceeds 5MB limit");
+                return ResponseEntity.badRequest().body(createErrorResponse("Image size exceeds 5MB limit"));
             }
 
             String contentType = image.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
-                return ResponseEntity.badRequest().body("Invalid file type. Only images are allowed");
+                return ResponseEntity.badRequest().body(createErrorResponse("Invalid file type. Only images are allowed"));
             }
 
             Optional<User> userOptional = userRepository.findById(userId);
             if (userOptional.isEmpty()) {
-                return ResponseEntity.badRequest().body("User not found");
+                return ResponseEntity.badRequest().body(createErrorResponse("User not found"));
             }
 
             User user = userOptional.get();
@@ -160,15 +176,15 @@ public class UserService {
             userDTO.setEmail(user.getEmail());
             userDTO.setProfileImage(user.getProfileImage());
             userDTO.setMobileNumber(user.getMobileNumber());
-            userDTO.setSource(user.getSource());
+            userDTO.setSource(user.getSource().toString());
             userDTO.setFollowedUsers(user.getFollowedUsers());
             userDTO.setFollowingUsers(user.getFollowingUsers());
             userDTO.setFollowersCount(user.getFollowersCount());
             userDTO.setFollowingCount(user.getFollowingCount());
 
-            return ResponseEntity.ok().body(userDTO);
+            return ResponseEntity.ok().body(createSuccessResponse(userDTO));
         } catch (IOException e) {
-            return ResponseEntity.badRequest().body("Error uploading image: " + e.getMessage());
+            return ResponseEntity.badRequest().body(createErrorResponse("Error uploading image: " + e.getMessage()));
         }
     }
 }
