@@ -37,7 +37,18 @@ public class UserService {
         Optional<User> userOptional = userRepository.findById(userId);
         if (userOptional.isPresent()) {
             User user = userOptional.get();
-            return new UserDTO(user.getId(), user.getName(), user.getEmail(), user.getProfileImage());
+            UserDTO userDTO = new UserDTO();
+            userDTO.setId(user.getId());
+            userDTO.setName(user.getName());
+            userDTO.setEmail(user.getEmail());
+            userDTO.setProfileImage(user.getProfileImage());
+            userDTO.setMobileNumber(user.getMobileNumber());
+            userDTO.setSource(user.getSource());
+            userDTO.setFollowedUsers(user.getFollowedUsers());
+            userDTO.setFollowingUsers(user.getFollowingUsers());
+            userDTO.setFollowersCount(user.getFollowersCount());
+            userDTO.setFollowingCount(user.getFollowingCount());
+            return userDTO;
         }
         return null;
     }
@@ -45,7 +56,20 @@ public class UserService {
     public List<UserDTO> getAllUsers() {
         List<User> users = userRepository.findAll();
         return users.stream()
-                .map(user -> new UserDTO(user.getId(), user.getName(), user.getEmail(), user.getProfileImage()))
+                .map(user -> {
+                    UserDTO userDTO = new UserDTO();
+                    userDTO.setId(user.getId());
+                    userDTO.setName(user.getName());
+                    userDTO.setEmail(user.getEmail());
+                    userDTO.setProfileImage(user.getProfileImage());
+                    userDTO.setMobileNumber(user.getMobileNumber());
+                    userDTO.setSource(user.getSource());
+                    userDTO.setFollowedUsers(user.getFollowedUsers());
+                    userDTO.setFollowingUsers(user.getFollowingUsers());
+                    userDTO.setFollowersCount(user.getFollowersCount());
+                    userDTO.setFollowingCount(user.getFollowingCount());
+                    return userDTO;
+                })
                 .toList();
     }
 
@@ -88,7 +112,18 @@ public class UserService {
             if (!user.getPassword().equals(password)) {
                 return ResponseEntity.badRequest().body("Invalid password");
             }
-            return ResponseEntity.ok().body(new UserDTO(user.getId(), user.getName(), user.getEmail(), user.getProfileImage()));
+            UserDTO userDTO = new UserDTO();
+            userDTO.setId(user.getId());
+            userDTO.setName(user.getName());
+            userDTO.setEmail(user.getEmail());
+            userDTO.setProfileImage(user.getProfileImage());
+            userDTO.setMobileNumber(user.getMobileNumber());
+            userDTO.setSource(user.getSource());
+            userDTO.setFollowedUsers(user.getFollowedUsers());
+            userDTO.setFollowingUsers(user.getFollowingUsers());
+            userDTO.setFollowersCount(user.getFollowersCount());
+            userDTO.setFollowingCount(user.getFollowingCount());
+            return ResponseEntity.ok().body(userDTO);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error logging in: " + e.getMessage());
         }
@@ -119,7 +154,19 @@ public class UserService {
             user.setProfileImage(base64Image);
             userRepository.save(user);
 
-            return ResponseEntity.ok().body("Profile image uploaded successfully");
+            UserDTO userDTO = new UserDTO();
+            userDTO.setId(user.getId());
+            userDTO.setName(user.getName());
+            userDTO.setEmail(user.getEmail());
+            userDTO.setProfileImage(user.getProfileImage());
+            userDTO.setMobileNumber(user.getMobileNumber());
+            userDTO.setSource(user.getSource());
+            userDTO.setFollowedUsers(user.getFollowedUsers());
+            userDTO.setFollowingUsers(user.getFollowingUsers());
+            userDTO.setFollowersCount(user.getFollowersCount());
+            userDTO.setFollowingCount(user.getFollowingCount());
+
+            return ResponseEntity.ok().body(userDTO);
         } catch (IOException e) {
             return ResponseEntity.badRequest().body("Error uploading image: " + e.getMessage());
         }

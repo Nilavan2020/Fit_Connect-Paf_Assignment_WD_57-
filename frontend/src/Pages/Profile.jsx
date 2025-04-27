@@ -256,14 +256,14 @@ const Profile = () => {
       );
 
       if (response.status === 200) {
-        setUser(prev => ({ ...prev, profileImage: response.data.profileImage }));
+        setUser(response.data);
         setPreviewImage(null);
         setSelectedImage(null);
         toast.success("Profile image updated successfully");
       }
     } catch (error) {
       console.error("Error uploading image:", error);
-      toast.error("Failed to upload profile image");
+      toast.error(error.response?.data || "Failed to upload profile image");
     }
   };
 
