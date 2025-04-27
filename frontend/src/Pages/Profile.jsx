@@ -3,7 +3,7 @@ import Layout from "../components/Layout";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import PostsList from "../components/PostsList";
-import { FaUserFriends, FaUserPlus, FaUserCheck, FaEllipsisH, FaDumbbell, FaUtensils, FaTrophy, FaChartLine, FaHeartbeat, FaEdit, FaTrash, FaCamera } from "react-icons/fa";
+import { FaUserFriends, FaUserPlus, FaUserCheck, FaEllipsisH, FaDumbbell, FaUtensils, FaTrophy, FaChartLine, FaHeartbeat, FaEdit, FaTrash, FaCamera, FaUpload, FaTimes } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { TETabs, TETabsItem } from "tw-elements-react";
 import toast from "react-hot-toast";
@@ -121,6 +121,10 @@ const Profile = () => {
   });
   const [selectedImage, setSelectedImage] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
+  const [showUploadOptions, setShowUploadOptions] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -225,65 +229,80 @@ const Profile = () => {
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setSelectedImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+    if (!file) return;
 
-  const handleUploadImage = async () => {
-    if (!selectedImage) {
-      toast.error("Please select an image first");
+    // Validate file type
+    if (!file.type.match(/image\/(jpeg|png|jpg)/)) {
+      setUploadError('Only JPG, JPEG, and PNG files are allowed');
       return;
     }
 
-    console.log("Selected image:", {
-      name: selectedImage.name,
-      size: selectedImage.size,
-      type: selectedImage.type
-    });
+    // Validate file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError('File size must be less than 10MB');
+      return;
+    }
 
-    const formData = new FormData();
-    formData.append("image", selectedImage);
+    // Create preview URL
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviewUrl(reader.result);
+      setShowUploadOptions(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUpload = async () => {
+    if (!previewUrl) return;
+
+    setUploading(true);
+    setUploadError(null);
 
     try {
-      console.log("Sending image upload request...");
-      const response = await axios.post(
-        `http://localhost:8080/users/${userId}/upload-profile-image`,
+      // Convert preview URL back to file
+      const response = await fetch(previewUrl);
+      const blob = await response.blob();
+      const file = new File([blob], "profile.jpg", { type: "image/jpeg" });
+
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const uploadResponse = await axios.post(
+        `http://localhost:8080/api/users/${user._id}/upload-profile-image`,
         formData,
         {
           headers: {
-            "Content-Type": "multipart/form-data",
-            "Accept": "application/json"
-          },
-          withCredentials: true
+            'Content-Type': 'multipart/form-data'
+          }
         }
       );
 
-      console.log("Upload response:", response.data);
-
-      if (response.data.success) {
-        console.log("Upload successful, updating user data:", response.data.data);
-        setUser(response.data.data);
-        setPreviewImage(null);
-        setSelectedImage(null);
-        toast.success("Profile image updated successfully");
+      if (uploadResponse.data.success) {
+        setUser(prev => ({
+          ...prev,
+          profileImage: uploadResponse.data.data.filePath
+        }));
+        toast.success('Profile image updated successfully');
+        setShowUploadOptions(false);
+        setPreviewUrl(null);
       } else {
-        console.error("Upload failed:", response.data.message);
-        toast.error(response.data.message || "Failed to upload profile image");
+        setUploadError(uploadResponse.data.message || 'Failed to upload image');
       }
     } catch (error) {
-      console.error("Error uploading image:", error);
-      console.error("Error response:", error.response?.data);
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.error || 
-                          "Failed to upload profile image";
-      toast.error(errorMessage);
+      console.error('Error uploading image:', error);
+      setUploadError(
+        error.response?.data?.message || 
+        'An error occurred while uploading the image'
+      );
+    } finally {
+      setUploading(false);
     }
+  };
+
+  const handleCancel = () => {
+    setShowUploadOptions(false);
+    setPreviewUrl(null);
+    setUploadError(null);
   };
 
   // Workout Card Component
@@ -423,24 +442,27 @@ const Profile = () => {
                   transition={{ duration: 0.5 }}
                   className="relative group"
                 >
-                  <img
-                    className="w-40 h-40 rounded-full border-4 border-white shadow-lg object-cover"
-                    src={previewImage || user?.profileImage}
-                    alt="Profile"
-                  />
-                  {loginUser?.id === user?.id && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="relative w-32 h-32">
+                    <img
+                      className="w-full h-full rounded-full object-cover border-4 border-white shadow-lg"
+                      src={previewUrl || user?.profileImage || '/default-profile.png'}
+                      alt="Profile"
+                    />
+                    
+                    {/* Facebook-style hover overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <label className="cursor-pointer">
                         <input
                           type="file"
-                          accept="image/*"
-                          onChange={handleImageChange}
+                          accept="image/jpeg,image/png,image/jpg"
                           className="hidden"
+                          onChange={handleImageChange}
+                          disabled={uploading}
                         />
                         <FaCamera className="text-white text-2xl" />
                       </label>
                     </div>
-                  )}
+                  </div>
                   <div className="absolute bottom-0 right-0 bg-green-500 rounded-full p-1 border-2 border-white">
                     <FaUserCheck className="text-white text-sm" />
                   </div>
@@ -525,35 +547,54 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Image Upload Modal */}
-        {selectedImage && (
+        {/* Upload Options Modal */}
+        {showUploadOptions && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 max-w-md w-full">
-              <h2 className="text-xl font-semibold mb-4">Upload Profile Image</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Update Profile Picture</h2>
+                <button
+                  onClick={handleCancel}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <FaTimes />
+                </button>
+              </div>
+              
               <div className="mb-4">
                 <img
-                  src={previewImage}
+                  src={previewUrl}
                   alt="Preview"
                   className="w-full h-48 object-cover rounded-lg"
                 />
               </div>
+
               <div className="flex justify-end space-x-2">
                 <button
-                  onClick={() => {
-                    setSelectedImage(null);
-                    setPreviewImage(null);
-                  }}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                  onClick={handleCancel}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={handleUploadImage}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  onClick={handleUpload}
+                  disabled={uploading}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
                 >
-                  Upload
+                  {uploading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  ) : (
+                    <FaUpload />
+                  )}
+                  <span>Upload</span>
                 </button>
               </div>
+
+              {uploadError && (
+                <div className="mt-2 text-red-500 text-sm">
+                  {uploadError}
+                </div>
+              )}
             </div>
           </div>
         )}
