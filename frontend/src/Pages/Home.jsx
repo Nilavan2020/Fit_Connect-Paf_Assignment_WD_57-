@@ -9,11 +9,42 @@ import WorkoutPlan from "./WorkoutPlan";
 import MealPlan from "./MealPlan";
 import { useActiveTab } from "../context/ActiveTabContext";
 import { SharedPostlist } from "../components/SharedPostlist";
-import { FaFire, FaHeartbeat, FaChartLine, FaRunning } from "react-icons/fa";
+import { FaFire, FaHeartbeat, FaChartLine, FaRunning, FaDumbbell, FaUtensils, FaUsers, FaTrophy } from "react-icons/fa";
 import { motion } from "framer-motion";
+import { useNavigate } from 'react-router-dom';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+
+// Mock data for demonstration
+const progressData = [
+  { date: 'Jan', weight: 75, bodyFat: 20 },
+  { date: 'Feb', weight: 74, bodyFat: 19 },
+  { date: 'Mar', weight: 73, bodyFat: 18 },
+  { date: 'Apr', weight: 72, bodyFat: 17 },
+  { date: 'May', weight: 71, bodyFat: 16 },
+];
+
+const featuredPlans = [
+  {
+    id: 1,
+    title: 'Beginner Strength Training',
+    description: 'Perfect for those new to weightlifting',
+    duration: '8 weeks',
+    difficulty: 'Beginner',
+    image: 'https://source.unsplash.com/random/800x600?gym',
+  },
+  {
+    id: 2,
+    title: 'Advanced HIIT Program',
+    description: 'High-intensity interval training for experienced athletes',
+    duration: '6 weeks',
+    difficulty: 'Advanced',
+    image: 'https://source.unsplash.com/random/800x600?workout',
+  },
+];
 
 const Home = () => {
   const { activeTab, setActiveTab } = useActiveTab();
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [reFetchPost, setReFetchPost] = useState(false);
   const [posts, setPosts] = useState([]);
@@ -93,171 +124,158 @@ const Home = () => {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+      <div className="min-h-screen bg-gray-100">
         {/* Hero Section */}
-        <div className="relative overflow-hidden">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="text-center">
-              <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
-                Welcome to <span className="text-purple-600">FitConnect</span>
-              </h1>
-              <p className="mt-3 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
-                Your personal fitness journey starts here. Track, share, and achieve your fitness goals with our community.
-              </p>
+        <div className="relative">
+          <div className="h-96 w-full">
+            <img
+              className="w-full h-full object-cover"
+              src="https://source.unsplash.com/random/1920x1080?gym"
+              alt="Hero"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50"></div>
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center text-center px-4">
+            <div className="max-w-3xl">
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-4xl md:text-6xl font-bold text-white mb-4"
+              >
+                Transform Your Fitness Journey
+              </motion.h1>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-xl text-white mb-8"
+              >
+                Join our community of fitness enthusiasts and achieve your goals together
+              </motion.p>
+              <motion.button
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                onClick={() => navigate('/workout-plan')}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full transition duration-300"
+              >
+                Get Started
+              </motion.button>
             </div>
           </div>
         </div>
 
         {/* Stats Section */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            <motion.div 
+        <div className="max-w-7xl mx-auto px-8 -mt-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <motion.div
               whileHover={{ scale: 1.05 }}
-              className="bg-white overflow-hidden shadow rounded-lg"
+              className="bg-white rounded-lg shadow-lg p-6 text-center"
             >
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <FaFire className="h-6 w-6 text-red-500" />
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">
-                        Calories Burned
-                      </dt>
-                      <dd className="flex items-baseline">
-                        <div className="text-2xl font-semibold text-gray-900">
-                          {stats.calories}
-                        </div>
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
+              <FaFire className="text-red-500 text-3xl mx-auto mb-4" />
+              <div className="text-3xl font-bold text-gray-800">{stats.workouts}</div>
+              <div className="text-gray-600">Workouts</div>
             </motion.div>
-
-            <motion.div 
+            <motion.div
               whileHover={{ scale: 1.05 }}
-              className="bg-white overflow-hidden shadow rounded-lg"
+              className="bg-white rounded-lg shadow-lg p-6 text-center"
             >
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <FaRunning className="h-6 w-6 text-blue-500" />
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">
-                        Workouts Completed
-                      </dt>
-                      <dd className="flex items-baseline">
-                        <div className="text-2xl font-semibold text-gray-900">
-                          {stats.workouts}
-                        </div>
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
+              <FaHeartbeat className="text-green-500 text-3xl mx-auto mb-4" />
+              <div className="text-3xl font-bold text-gray-800">{stats.calories}</div>
+              <div className="text-gray-600">Calories Burned</div>
             </motion.div>
-
-            <motion.div 
+            <motion.div
               whileHover={{ scale: 1.05 }}
-              className="bg-white overflow-hidden shadow rounded-lg"
+              className="bg-white rounded-lg shadow-lg p-6 text-center"
             >
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <FaHeartbeat className="h-6 w-6 text-green-500" />
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">
-                        Active Minutes
-                      </dt>
-                      <dd className="flex items-baseline">
-                        <div className="text-2xl font-semibold text-gray-900">
-                          {stats.activeMinutes}
-                        </div>
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
+              <FaRunning className="text-blue-500 text-3xl mx-auto mb-4" />
+              <div className="text-3xl font-bold text-gray-800">{stats.steps}</div>
+              <div className="text-gray-600">Steps</div>
             </motion.div>
-
-            <motion.div 
+            <motion.div
               whileHover={{ scale: 1.05 }}
-              className="bg-white overflow-hidden shadow rounded-lg"
+              className="bg-white rounded-lg shadow-lg p-6 text-center"
             >
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <FaChartLine className="h-6 w-6 text-purple-500" />
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">
-                        Steps Today
-                      </dt>
-                      <dd className="flex items-baseline">
-                        <div className="text-2xl font-semibold text-gray-900">
-                          {stats.steps}
-                        </div>
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
+              <FaChartLine className="text-purple-500 text-3xl mx-auto mb-4" />
+              <div className="text-3xl font-bold text-gray-800">{stats.activeMinutes}</div>
+              <div className="text-gray-600">Active Minutes</div>
             </motion.div>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-8">
-            <TETabs fill className="bg-white rounded-lg shadow-sm">
-              <TETabsItem
-                onClick={() => setActiveTab("tab1")}
-                active={activeTab === "tab1" || activeTab === "" ? true : false}
-                color="primary"
-                className="px-6 py-3 text-sm font-medium rounded-md transition-colors duration-200"
+        {/* Featured Plans Section */}
+        <div className="max-w-7xl mx-auto px-8 mt-12">
+          <h2 className="text-3xl font-bold text-gray-800 mb-6">Featured Workout Plans</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {featuredPlans.map((plan) => (
+              <motion.div
+                key={plan.id}
+                whileHover={{ scale: 1.02 }}
+                className="bg-white rounded-lg shadow-lg overflow-hidden"
               >
-                Daily Post
-              </TETabsItem>
-              <TETabsItem
-                onClick={() => setActiveTab("tab2")}
-                active={activeTab === "tab2" ? true : false}
-                color="primary"
-                className="px-6 py-3 text-sm font-medium rounded-md transition-colors duration-200"
-              >
-                Workout Status
-              </TETabsItem>
-              <TETabsItem
-                onClick={() => setActiveTab("tab3")}
-                active={activeTab === "tab3" ? true : false}
-                color="primary"
-                className="px-6 py-3 text-sm font-medium rounded-md transition-colors duration-200"
-              >
-                Workout Plan
-              </TETabsItem>
-              <TETabsItem
-                onClick={() => setActiveTab("tab4")}
-                active={activeTab === "tab4" ? true : false}
-                color="primary"
-                className="px-6 py-3 text-sm font-medium rounded-md transition-colors duration-200"
-              >
-                Meal Plan
-              </TETabsItem>
-            </TETabs>
+                <img
+                  src={plan.image}
+                  alt={plan.title}
+                  className="w-full h-48 object-cover"
+                />
+                <div className="p-6">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-2">{plan.title}</h3>
+                  <p className="text-gray-600 mb-4">{plan.description}</p>
+                  <div className="flex gap-2 mb-4">
+                    <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                      {plan.duration}
+                    </span>
+                    <span className="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
+                      {plan.difficulty}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => navigate(`/workout-plan/${plan.id}`)}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300"
+                  >
+                    View Plan
+                  </button>
+                </div>
+              </motion.div>
+            ))}
           </div>
+        </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            {activeTab === "tab1" && (
+        {/* Main Content Tabs */}
+        <div className="max-w-7xl mx-auto px-8 mt-12">
+          <TETabs fill className="bg-white rounded-lg shadow-sm">
+            <TETabsItem
+              onClick={() => setActiveTab('posts')}
+              active={activeTab === 'posts'}
+              color="primary"
+              className="px-6 py-3 text-sm font-medium rounded-md transition-colors duration-200"
+            >
+              <FaUsers className="mr-2" />
+              Community
+            </TETabsItem>
+            <TETabsItem
+              onClick={() => setActiveTab('progress')}
+              active={activeTab === 'progress'}
+              color="primary"
+              className="px-6 py-3 text-sm font-medium rounded-md transition-colors duration-200"
+            >
+              <FaChartLine className="mr-2" />
+              Progress
+            </TETabsItem>
+            <TETabsItem
+              onClick={() => setActiveTab('nutrition')}
+              active={activeTab === 'nutrition'}
+              color="primary"
+              className="px-6 py-3 text-sm font-medium rounded-md transition-colors duration-200"
+            >
+              <FaUtensils className="mr-2" />
+              Nutrition
+            </TETabsItem>
+          </TETabs>
+
+          {/* Content Sections */}
+          <div className="mt-6">
+            {activeTab === 'posts' && (
               <div className="space-y-6">
                 {posts?.map((post, index) => (
                   <motion.div
@@ -296,36 +314,84 @@ const Home = () => {
               </div>
             )}
 
-            {activeTab === "tab2" && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-              >
-                <WorkoutStatus user={user} />
-              </motion.div>
+            {activeTab === 'progress' && (
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <h3 className="text-xl font-semibold text-gray-800 mb-4">Your Progress</h3>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={progressData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis yAxisId="left" />
+                      <YAxis yAxisId="right" orientation="right" />
+                      <Tooltip />
+                      <Legend />
+                      <Line
+                        yAxisId="left"
+                        type="monotone"
+                        dataKey="weight"
+                        stroke="#8884d8"
+                        name="Weight (kg)"
+                      />
+                      <Line
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="bodyFat"
+                        stroke="#82ca9d"
+                        name="Body Fat (%)"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
             )}
 
-            {activeTab === "tab3" && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-              >
-                <WorkoutPlan user={user} />
-              </motion.div>
+            {activeTab === 'nutrition' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Today's Intake</h3>
+                  <div className="space-y-4">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Calories</span>
+                      <span className="font-semibold">1,500 / 2,000</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Protein</span>
+                      <span className="font-semibold">120g / 150g</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Carbs</span>
+                      <span className="font-semibold">150g / 200g</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Fat</span>
+                      <span className="font-semibold">50g / 65g</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Recent Meals</h3>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="font-semibold">Breakfast</p>
+                        <p className="text-sm text-gray-600">Oatmeal with fruits</p>
+                      </div>
+                      <span className="font-semibold">450 kcal</span>
+                    </div>
+                    <div className="border-t border-gray-200"></div>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="font-semibold">Lunch</p>
+                        <p className="text-sm text-gray-600">Grilled chicken salad</p>
+                      </div>
+                      <span className="font-semibold">550 kcal</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
-
-            {activeTab === "tab4" && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-              >
-                <MealPlan user={user} />
-              </motion.div>
-            )}
-          </motion.div>
+          </div>
         </div>
       </div>
     </Layout>
