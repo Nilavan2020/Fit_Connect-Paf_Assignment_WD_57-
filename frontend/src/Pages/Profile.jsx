@@ -241,31 +241,47 @@ const Profile = () => {
       return;
     }
 
+    console.log("Selected image:", {
+      name: selectedImage.name,
+      size: selectedImage.size,
+      type: selectedImage.type
+    });
+
     const formData = new FormData();
     formData.append("image", selectedImage);
 
     try {
+      console.log("Sending image upload request...");
       const response = await axios.post(
         `http://localhost:8080/users/${userId}/upload-profile-image`,
         formData,
         {
           headers: {
             "Content-Type": "multipart/form-data",
+            "Accept": "application/json"
           },
+          withCredentials: true
         }
       );
 
+      console.log("Upload response:", response.data);
+
       if (response.data.success) {
+        console.log("Upload successful, updating user data:", response.data.data);
         setUser(response.data.data);
         setPreviewImage(null);
         setSelectedImage(null);
         toast.success("Profile image updated successfully");
       } else {
+        console.error("Upload failed:", response.data.message);
         toast.error(response.data.message || "Failed to upload profile image");
       }
     } catch (error) {
       console.error("Error uploading image:", error);
-      const errorMessage = error.response?.data?.message || "Failed to upload profile image";
+      console.error("Error response:", error.response?.data);
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          "Failed to upload profile image";
       toast.error(errorMessage);
     }
   };

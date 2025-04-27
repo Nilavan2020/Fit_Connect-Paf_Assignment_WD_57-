@@ -147,28 +147,42 @@ public class UserService {
 
     public ResponseEntity<Object> uploadProfileImage(String userId, MultipartFile image) {
         try {
+            System.out.println("Received image upload request for user: " + userId);
+            System.out.println("Image details - Name: " + image.getOriginalFilename() + 
+                             ", Size: " + image.getSize() + 
+                             ", Content Type: " + image.getContentType());
+
             if (image == null || image.isEmpty()) {
+                System.out.println("No image file provided");
                 return ResponseEntity.badRequest().body(createErrorResponse("No image file provided"));
             }
 
             if (image.getSize() > 5 * 1024 * 1024) { // 5MB limit
+                System.out.println("Image size exceeds limit: " + image.getSize());
                 return ResponseEntity.badRequest().body(createErrorResponse("Image size exceeds 5MB limit"));
             }
 
             String contentType = image.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
+                System.out.println("Invalid content type: " + contentType);
                 return ResponseEntity.badRequest().body(createErrorResponse("Invalid file type. Only images are allowed"));
             }
 
             Optional<User> userOptional = userRepository.findById(userId);
             if (userOptional.isEmpty()) {
+                System.out.println("User not found: " + userId);
                 return ResponseEntity.badRequest().body(createErrorResponse("User not found"));
             }
 
             User user = userOptional.get();
+            System.out.println("Converting image to base64...");
             String base64Image = Base64.getEncoder().encodeToString(image.getBytes());
+            System.out.println("Base64 conversion successful, length: " + base64Image.length());
+            
             user.setProfileImage(base64Image);
+            System.out.println("Saving user with new profile image...");
             userRepository.save(user);
+            System.out.println("User saved successfully");
 
             UserDTO userDTO = new UserDTO();
             userDTO.setId(user.getId());
@@ -182,9 +196,16 @@ public class UserService {
             userDTO.setFollowersCount(user.getFollowersCount());
             userDTO.setFollowingCount(user.getFollowingCount());
 
+            System.out.println("Returning success response");
             return ResponseEntity.ok().body(createSuccessResponse(userDTO));
         } catch (IOException e) {
+            System.out.println("Error during image upload: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(createErrorResponse("Error uploading image: " + e.getMessage()));
+        } catch (Exception e) {
+            System.out.println("Unexpected error during image upload: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(createErrorResponse("Unexpected error: " + e.getMessage()));
         }
     }
 }

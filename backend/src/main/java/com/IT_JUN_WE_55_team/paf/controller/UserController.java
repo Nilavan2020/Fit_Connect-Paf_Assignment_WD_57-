@@ -13,6 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/users")
+@CrossOrigin(origins = "*")
 public class UserController {
 
     @Autowired
@@ -35,7 +36,7 @@ public class UserController {
 
     @PostMapping("/follow")
     public ResponseEntity<Object> followUser(@RequestParam String userId, @RequestParam String FollowedUserId) {
-        return userService.followUser(userId,FollowedUserId);
+        return userService.followUser(userId, FollowedUserId);
     }
 
     @PostMapping("/login")
@@ -43,10 +44,12 @@ public class UserController {
         return userService.loginUser(user.getEmail(), user.getPassword());
     }
 
-    @PostMapping("/{userId}/upload-profile-image")
+    @PostMapping(value = "/{userId}/upload-profile-image", consumes = "multipart/form-data")
     public ResponseEntity<Object> uploadProfileImage(
             @PathVariable String userId,
             @RequestParam("image") MultipartFile image) {
+        System.out.println("Received upload request for user: " + userId);
+        System.out.println("File details: " + image.getOriginalFilename() + ", " + image.getContentType() + ", " + image.getSize());
         return userService.uploadProfileImage(userId, image);
     }
 }
