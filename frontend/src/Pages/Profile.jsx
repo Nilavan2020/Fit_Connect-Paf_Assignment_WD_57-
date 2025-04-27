@@ -7,6 +7,7 @@ import { FaUserFriends, FaUserPlus, FaUserCheck, FaEllipsisH, FaDumbbell, FaUten
 import { motion } from "framer-motion";
 import { TETabs, TETabsItem } from "tw-elements-react";
 import toast from "react-hot-toast";
+import config from '../config';
 
 // Demo data for workouts
 const demoWorkouts = [
@@ -125,6 +126,7 @@ const Profile = () => {
   const [uploadError, setUploadError] = useState(null);
   const [showUploadOptions, setShowUploadOptions] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -191,30 +193,41 @@ const Profile = () => {
 
   const handleSaveProfile = async () => {
     try {
-      const response = await axios.put(`http://localhost:8080/users/${userId}`, editedUser);
-      if (response.status === 200) {
-        setUser(response.data);
+      const response = await axios.put(
+        `${config.apiBaseUrl}/users/${user._id}`,
+        editedUser
+      );
+
+      if (response.data.success) {
+        setUser(response.data.data);
         setIsEditing(false);
-        toast.success("Profile updated successfully");
+        toast.success('Profile updated successfully');
+      } else {
+        toast.error(response.data.message || 'Failed to update profile');
       }
     } catch (error) {
-      console.error("Error updating profile:", error);
-      toast.error("Failed to update profile");
+      console.error('Error updating profile:', error);
+      toast.error(error.response?.data?.message || 'Failed to update profile');
     }
   };
 
   const handleDeleteProfile = async () => {
-    if (window.confirm("Are you sure you want to delete your profile? This action cannot be undone.")) {
+    if (window.confirm('Are you sure you want to delete your profile? This action cannot be undone.')) {
       try {
-        const response = await axios.delete(`http://localhost:8080/users/${userId}`);
-        if (response.status === 200) {
-          toast.success("Profile deleted successfully");
-          localStorage.removeItem("user");
-          navigate("/login");
+        const response = await axios.delete(
+          `${config.apiBaseUrl}/users/${user._id}`
+        );
+
+        if (response.data.success) {
+          toast.success('Profile deleted successfully');
+          localStorage.removeItem('user');
+          navigate('/login');
+        } else {
+          toast.error(response.data.message || 'Failed to delete profile');
         }
       } catch (error) {
-        console.error("Error deleting profile:", error);
-        toast.error("Failed to delete profile");
+        console.error('Error deleting profile:', error);
+        toast.error(error.response?.data?.message || 'Failed to delete profile');
       }
     }
   };
@@ -243,6 +256,8 @@ const Profile = () => {
       return;
     }
 
+    setSelectedFile(file);
+    
     // Create preview URL
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -253,22 +268,17 @@ const Profile = () => {
   };
 
   const handleUpload = async () => {
-    if (!previewUrl) return;
+    if (!selectedFile) return;
 
     setUploading(true);
     setUploadError(null);
 
     try {
-      // Convert preview URL back to file
-      const response = await fetch(previewUrl);
-      const blob = await response.blob();
-      const file = new File([blob], "profile.jpg", { type: "image/jpeg" });
-
       const formData = new FormData();
-      formData.append('image', file);
+      formData.append('image', selectedFile);
 
       const uploadResponse = await axios.post(
-        `http://localhost:8080/api/users/${user._id}/upload-profile-image`,
+        `${config.apiBaseUrl}/users/${user._id}/upload-profile-image`,
         formData,
         {
           headers: {
@@ -285,6 +295,7 @@ const Profile = () => {
         toast.success('Profile image updated successfully');
         setShowUploadOptions(false);
         setPreviewUrl(null);
+        setSelectedFile(null);
       } else {
         setUploadError(uploadResponse.data.message || 'Failed to upload image');
       }
@@ -302,7 +313,14 @@ const Profile = () => {
   const handleCancel = () => {
     setShowUploadOptions(false);
     setPreviewUrl(null);
+    setSelectedFile(null);
     setUploadError(null);
+  };
+
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return '/default-profile.png';
+    if (imagePath.startsWith('http')) return imagePath;
+    return `${config.imageBaseUrl}/${imagePath.split('/').pop()}`;
   };
 
   // Workout Card Component
@@ -445,7 +463,7 @@ const Profile = () => {
                   <div className="relative w-32 h-32">
                     <img
                       className="w-full h-full rounded-full object-cover border-4 border-white shadow-lg"
-                      src={previewUrl || user?.profileImage || '/default-profile.png'}
+                      src={getImageUrl(previewUrl || user?.profileImage)}
                       alt="Profile"
                     />
                     
@@ -470,22 +488,26 @@ const Profile = () => {
                 <div className="flex-1">
                   {isEditing ? (
                     <div className="space-y-4">
-                      <input
-                        type="text"
-                        name="name"
-                        value={editedUser?.name}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Name"
-                      />
-                      <input
-                        type="text"
-                        name="email"
-                        value={editedUser?.email}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Email"
-                      />
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Name</label>
+                        <input
+                          type="text"
+                          name="name"
+                          value={editedUser?.name}
+                          onChange={handleInputChange}
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Email</label>
+                        <input
+                          type="email"
+                          name="email"
+                          value={editedUser?.email}
+                          onChange={handleInputChange}
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        />
+                      </div>
                       <div className="flex space-x-2">
                         <button
                           onClick={handleSaveProfile}
@@ -502,28 +524,28 @@ const Profile = () => {
                       </div>
                     </div>
                   ) : (
-                    <>
-                      <h1 className="text-3xl font-bold text-white">{user?.name}</h1>
-                      <p className="text-gray-200 mt-1">{user?.email}</p>
-                      {loginUser?.id === user?.id && (
-                        <div className="flex space-x-4 mt-4">
-                          <button
-                            onClick={handleEditProfile}
-                            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                          >
-                            <FaEdit />
-                            <span>Edit Profile</span>
-                          </button>
-                          <button
-                            onClick={handleDeleteProfile}
-                            className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                          >
-                            <FaTrash />
-                            <span>Delete Profile</span>
-                          </button>
-                        </div>
-                      )}
-                    </>
+                    <div className="space-y-4">
+                      <div>
+                        <h2 className="text-xl font-semibold">{user?.name}</h2>
+                        <p className="text-gray-600">{user?.email}</p>
+                      </div>
+                      <div className="flex space-x-4">
+                        <button
+                          onClick={handleEditProfile}
+                          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          <FaEdit />
+                          <span>Edit Profile</span>
+                        </button>
+                        <button
+                          onClick={handleDeleteProfile}
+                          className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                        >
+                          <FaTrash />
+                          <span>Delete Profile</span>
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
                 {loginUser?.id !== user?.id && (

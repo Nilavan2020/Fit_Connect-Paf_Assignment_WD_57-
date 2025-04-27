@@ -1,6 +1,7 @@
 package com.IT_JUN_WE_55_team.paf.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -207,5 +208,65 @@ public class UserService {
             e.printStackTrace();
             return ResponseEntity.badRequest().body(createErrorResponse("Unexpected error: " + e.getMessage()));
         }
+    }
+
+    public ResponseEntity<Object> updateUser(String userId, User updatedUser) {
+        try {
+            Optional<User> existingUser = userRepository.findById(userId);
+            if (existingUser.isEmpty()) {
+                return createErrorResponse("User not found", HttpStatus.NOT_FOUND);
+            }
+
+            User user = existingUser.get();
+            
+            // Update only the provided fields
+            if (updatedUser.getName() != null) {
+                user.setName(updatedUser.getName());
+            }
+            if (updatedUser.getEmail() != null) {
+                user.setEmail(updatedUser.getEmail());
+            }
+            if (updatedUser.getPassword() != null) {
+                user.setPassword(updatedUser.getPassword());
+            }
+            if (updatedUser.getProfileImage() != null) {
+                user.setProfileImage(updatedUser.getProfileImage());
+            }
+
+            User savedUser = userRepository.save(user);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "User updated successfully");
+            response.put("data", savedUser);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return createErrorResponse("Error updating user: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public ResponseEntity<Object> deleteUser(String userId) {
+        try {
+            Optional<User> existingUser = userRepository.findById(userId);
+            if (existingUser.isEmpty()) {
+                return createErrorResponse("User not found", HttpStatus.NOT_FOUND);
+            }
+
+            userRepository.deleteById(userId);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "User deleted successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return createErrorResponse("Error deleting user: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private ResponseEntity<Object> createErrorResponse(String message, HttpStatus status) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("message", message);
+        return ResponseEntity.status(status).body(response);
     }
 }

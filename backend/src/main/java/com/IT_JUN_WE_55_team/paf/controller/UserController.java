@@ -48,6 +48,18 @@ public class UserController {
         return userService.loginUser(user.getEmail(), user.getPassword());
     }
 
+    @PutMapping("/{userId}")
+    public ResponseEntity<Object> updateUser(
+            @PathVariable String userId,
+            @RequestBody User updatedUser) {
+        return userService.updateUser(userId, updatedUser);
+    }
+
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<Object> deleteUser(@PathVariable String userId) {
+        return userService.deleteUser(userId);
+    }
+
     @PostMapping("/{userId}/upload-profile-image")
     public ResponseEntity<Object> uploadProfileImage(
             @PathVariable String userId,
