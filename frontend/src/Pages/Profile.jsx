@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import PostsList from "../components/PostsList";
-import { FaUserFriends, FaUserPlus, FaUserCheck, FaEllipsisH, FaDumbbell, FaUtensils, FaTrophy, FaChartLine, FaHeartbeat } from "react-icons/fa";
+import { FaUserFriends, FaUserPlus, FaUserCheck, FaEllipsisH, FaDumbbell, FaUtensils, FaTrophy, FaChartLine, FaHeartbeat, FaEdit, FaTrash, FaCamera } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { TETabs, TETabsItem } from "tw-elements-react";
+import toast from "react-hot-toast";
 
 // Demo data for workouts
 const demoWorkouts = [
@@ -109,12 +110,17 @@ const Profile = () => {
   const [reFetchPost, setReFetchPost] = useState(false);
   const [reFetchUser, setReFetchUser] = useState(false);
   const [activeTab, setActiveTab] = useState("posts");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedUser, setEditedUser] = useState(null);
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     workouts: 0,
     meals: 0,
     posts: 0,
     achievements: 0
   });
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -171,6 +177,93 @@ const Profile = () => {
       setReFetchUser(!reFetchUser);
     } catch (error) {
       console.log(error);
+    }
+  };
+
+  const handleEditProfile = () => {
+    setEditedUser({ ...user });
+    setIsEditing(true);
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      const response = await axios.put(`http://localhost:8080/users/${userId}`, editedUser);
+      if (response.status === 200) {
+        setUser(response.data);
+        setIsEditing(false);
+        toast.success("Profile updated successfully");
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error("Failed to update profile");
+    }
+  };
+
+  const handleDeleteProfile = async () => {
+    if (window.confirm("Are you sure you want to delete your profile? This action cannot be undone.")) {
+      try {
+        const response = await axios.delete(`http://localhost:8080/users/${userId}`);
+        if (response.status === 200) {
+          toast.success("Profile deleted successfully");
+          localStorage.removeItem("user");
+          navigate("/login");
+        }
+      } catch (error) {
+        console.error("Error deleting profile:", error);
+        toast.error("Failed to delete profile");
+      }
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditedUser(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewImage(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUploadImage = async () => {
+    if (!selectedImage) {
+      toast.error("Please select an image first");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("image", selectedImage);
+
+    try {
+      const response = await axios.post(
+        `http://localhost:8080/users/${userId}/upload-profile-image`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        setUser(prev => ({ ...prev, profileImage: response.data.profileImage }));
+        setPreviewImage(null);
+        setSelectedImage(null);
+        toast.success("Profile image updated successfully");
+      }
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast.error("Failed to upload profile image");
     }
   };
 
@@ -309,20 +402,88 @@ const Profile = () => {
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.5 }}
-                  className="relative"
+                  className="relative group"
                 >
                   <img
-                    className="w-40 h-40 rounded-full border-4 border-white shadow-lg"
-                    src={user?.profileImage}
+                    className="w-40 h-40 rounded-full border-4 border-white shadow-lg object-cover"
+                    src={previewImage || user?.profileImage}
                     alt="Profile"
                   />
+                  {loginUser?.id === user?.id && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                          className="hidden"
+                        />
+                        <FaCamera className="text-white text-2xl" />
+                      </label>
+                    </div>
+                  )}
                   <div className="absolute bottom-0 right-0 bg-green-500 rounded-full p-1 border-2 border-white">
                     <FaUserCheck className="text-white text-sm" />
                   </div>
                 </motion.div>
                 <div className="flex-1">
-                  <h1 className="text-3xl font-bold text-white">{user?.name}</h1>
-                  <p className="text-gray-200 mt-1">Fitness Enthusiast</p>
+                  {isEditing ? (
+                    <div className="space-y-4">
+                      <input
+                        type="text"
+                        name="name"
+                        value={editedUser?.name}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Name"
+                      />
+                      <input
+                        type="text"
+                        name="email"
+                        value={editedUser?.email}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Email"
+                      />
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={handleSaveProfile}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          Save Changes
+                        </button>
+                        <button
+                          onClick={() => setIsEditing(false)}
+                          className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <h1 className="text-3xl font-bold text-white">{user?.name}</h1>
+                      <p className="text-gray-200 mt-1">{user?.email}</p>
+                      {loginUser?.id === user?.id && (
+                        <div className="flex space-x-4 mt-4">
+                          <button
+                            onClick={handleEditProfile}
+                            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                          >
+                            <FaEdit />
+                            <span>Edit Profile</span>
+                          </button>
+                          <button
+                            onClick={handleDeleteProfile}
+                            className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                          >
+                            <FaTrash />
+                            <span>Delete Profile</span>
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
                 {loginUser?.id !== user?.id && (
                   <motion.button
@@ -344,6 +505,39 @@ const Profile = () => {
             </div>
           </div>
         </div>
+
+        {/* Image Upload Modal */}
+        {selectedImage && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+              <h2 className="text-xl font-semibold mb-4">Upload Profile Image</h2>
+              <div className="mb-4">
+                <img
+                  src={previewImage}
+                  alt="Preview"
+                  className="w-full h-48 object-cover rounded-lg"
+                />
+              </div>
+              <div className="flex justify-end space-x-2">
+                <button
+                  onClick={() => {
+                    setSelectedImage(null);
+                    setPreviewImage(null);
+                  }}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleUploadImage}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Upload
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Stats Section */}
         <div className="max-w-7xl mx-auto px-8 -mt-8">

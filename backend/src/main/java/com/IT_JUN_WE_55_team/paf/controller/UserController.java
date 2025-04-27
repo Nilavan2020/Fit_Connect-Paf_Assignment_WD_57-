@@ -3,6 +3,7 @@ package com.IT_JUN_WE_55_team.paf.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.IT_JUN_WE_55_team.paf.DTO.UserDTO;
 import com.IT_JUN_WE_55_team.paf.model.User;
@@ -36,11 +37,17 @@ public class UserController {
     public ResponseEntity<Object> followUser(@RequestParam String userId, @RequestParam String FollowedUserId) {
         return userService.followUser(userId,FollowedUserId);
     }
+
     @PostMapping("/login")
     public ResponseEntity<Object> loginUser(@RequestBody User user) {
-
         return userService.loginUser(user.getEmail(), user.getPassword());
+    }
 
+    @PostMapping("/{userId}/upload-profile-image")
+    public ResponseEntity<Object> uploadProfileImage(
+            @PathVariable String userId,
+            @RequestParam("image") MultipartFile image) {
+        return userService.uploadProfileImage(userId, image);
     }
 }
 

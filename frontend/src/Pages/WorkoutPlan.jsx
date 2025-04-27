@@ -29,19 +29,37 @@ const WorkoutPlan = ({ user }) => {
   // Delete Workout Plans by ID
   const deleteWorkoutPlan = async (plan) => {
     try {
-      await axios.delete(`http://localhost:8080/workoutPlans/${plan.planId}`);
-      setWorkoutPlans((prevPlans) =>
-        prevPlans.filter((p) => p.planId !== plan.planId)
-      );
-      toast.success("Workout plan deleted successfully");
+      console.log('Deleting plan with ID:', plan.workoutPlanId);
+      const response = await axios.delete(`http://localhost:8080/workoutPlans/${plan.workoutPlanId}`);
+      console.log('Delete response:', response);
+      
+      if (response.status === 200 || response.status === 204) {
+        setWorkoutPlans((prevPlans) =>
+          prevPlans.filter((p) => p.workoutPlanId !== plan.workoutPlanId)
+        );
+        toast.success("Workout plan deleted successfully");
+      } else {
+        toast.error("Failed to delete workout plan: Unexpected response");
+      }
     } catch (error) {
-      toast.error("Failed to delete workout plan");
+      console.error('Delete error:', error);
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        toast.error(`Failed to delete workout plan: ${error.response.data.message || error.response.statusText}`);
+      } else if (error.request) {
+        // The request was made but no response was received
+        toast.error("Failed to delete workout plan: No response from server");
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        toast.error(`Failed to delete workout plan: ${error.message}`);
+      }
     }
   };
 
 
   const navigateEditPage = (plan) => {
-    navigate(`/CreateWorkoutPlan/${plan.planId}`);
+    navigate(`/CreateWorkoutPlan/${plan.workoutPlanId}`);
   };
 
   // Function to handle click event
