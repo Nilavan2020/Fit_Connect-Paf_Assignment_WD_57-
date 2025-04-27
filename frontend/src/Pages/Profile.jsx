@@ -3,6 +3,102 @@ import Layout from "../components/Layout";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import PostsList from "../components/PostsList";
+import { FaUserFriends, FaUserPlus, FaUserCheck, FaEllipsisH, FaDumbbell, FaUtensils, FaTrophy, FaChartLine, FaHeartbeat } from "react-icons/fa";
+import { motion } from "framer-motion";
+import { TETabs, TETabsItem } from "tw-elements-react";
+
+// Demo data for workouts
+const demoWorkouts = [
+  {
+    id: 1,
+    name: "Full Body Workout",
+    date: "2024-03-15",
+    duration: "45 mins",
+    exercises: ["Push-ups", "Squats", "Plank", "Lunges"],
+    calories: 350,
+    image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+  },
+  {
+    id: 2,
+    name: "Cardio Session",
+    date: "2024-03-14",
+    duration: "30 mins",
+    exercises: ["Running", "Jump Rope", "Burpees"],
+    calories: 400,
+    image: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+  },
+  {
+    id: 3,
+    name: "Upper Body Strength",
+    date: "2024-03-13",
+    duration: "50 mins",
+    exercises: ["Bench Press", "Pull-ups", "Shoulder Press"],
+    calories: 450,
+    image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+  }
+];
+
+// Demo data for meals
+const demoMeals = [
+  {
+    id: 1,
+    name: "Protein Breakfast Bowl",
+    date: "2024-03-15",
+    calories: 450,
+    protein: 30,
+    carbs: 45,
+    fat: 15,
+    ingredients: ["Eggs", "Avocado", "Whole Grain Toast", "Greek Yogurt"],
+    image: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+  },
+  {
+    id: 2,
+    name: "Quinoa Salad",
+    date: "2024-03-14",
+    calories: 380,
+    protein: 20,
+    carbs: 50,
+    fat: 12,
+    ingredients: ["Quinoa", "Mixed Vegetables", "Chicken Breast", "Olive Oil"],
+    image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+  },
+  {
+    id: 3,
+    name: "Post-Workout Smoothie",
+    date: "2024-03-13",
+    calories: 320,
+    protein: 25,
+    carbs: 40,
+    fat: 8,
+    ingredients: ["Banana", "Protein Powder", "Almond Milk", "Peanut Butter"],
+    image: "https://images.unsplash.com/photo-1502741224143-90386d7f8c82?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+  }
+];
+
+// Demo data for achievements
+const demoAchievements = [
+  {
+    id: 1,
+    title: "Consistency Master",
+    description: "Completed 30 workouts in a month",
+    date: "2024-03-01",
+    icon: "🏆"
+  },
+  {
+    id: 2,
+    title: "Nutrition Expert",
+    description: "Maintained healthy diet for 2 months",
+    date: "2024-02-15",
+    icon: "🥗"
+  },
+  {
+    id: 3,
+    title: "Fitness Streak",
+    description: "Worked out for 7 days straight",
+    date: "2024-03-10",
+    icon: "🔥"
+  }
+];
 
 const Profile = () => {
   const [user, setUser] = useState(null);
@@ -12,6 +108,13 @@ const Profile = () => {
   const [posts, setPosts] = useState([]);
   const [reFetchPost, setReFetchPost] = useState(false);
   const [reFetchUser, setReFetchUser] = useState(false);
+  const [activeTab, setActiveTab] = useState("posts");
+  const [stats, setStats] = useState({
+    workouts: 0,
+    meals: 0,
+    posts: 0,
+    achievements: 0
+  });
 
   useEffect(() => {
     setLoading(true);
@@ -20,7 +123,6 @@ const Profile = () => {
       try {
         const res = await axios.get(`http://localhost:8080/users/${userId}`);
         setUser(res.data);
-
         setLoading(false);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -34,9 +136,7 @@ const Profile = () => {
   useEffect(() => {
     const fetchUserPosts = async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:8080/posts/user/${userId}`
-        );
+        const res = await axios.get(`http://localhost:8080/posts/user/${userId}`);
         setPosts(res.data);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -46,26 +146,22 @@ const Profile = () => {
   }, [userId, reFetchPost]);
 
   useEffect(() => {
-    setLoading(true);
-    setUser(null);
     const fetchData = async () => {
       try {
         await new Promise((resolve) => setTimeout(resolve, 1000));
         const userData = localStorage.getItem("user");
         setLoginUser(JSON.parse(userData));
-        setLoading(false);
+        
+        // Fetch user stats
+        const statsResponse = await axios.get(`http://localhost:8080/users/${userId}/stats`);
+        setStats(statsResponse.data);
       } catch (error) {
         console.error("Error fetching data:", error);
-        setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
-
-//   if (loading && !user) {
-//     return <Layout>loading...</Layout>;
-//   }
+  }, [userId]);
 
   const handleFollowUser = async () => {
     try {
@@ -73,87 +169,368 @@ const Profile = () => {
         `http://localhost:8080/users/follow?userId=${loginUser.id}&FollowedUserId=${user?.id}`
       );
       setReFetchUser(!reFetchUser);
-      console.log(res);
     } catch (error) {
       console.log(error);
     }
   };
 
+  // Workout Card Component
+  const WorkoutCard = ({ workout }) => (
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      className="bg-white rounded-lg shadow-md overflow-hidden"
+    >
+      <img
+        src={workout.image}
+        alt={workout.name}
+        className="w-full h-48 object-cover"
+      />
+      <div className="p-4">
+        <h3 className="text-xl font-semibold text-gray-800">{workout.name}</h3>
+        <div className="flex items-center text-gray-600 mt-2">
+          <FaDumbbell className="mr-2" />
+          <span>{workout.duration}</span>
+        </div>
+        <div className="mt-2">
+          <p className="text-sm text-gray-600">Exercises:</p>
+          <div className="flex flex-wrap gap-2 mt-1">
+            {workout.exercises.map((exercise, index) => (
+              <span
+                key={index}
+                className="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full"
+              >
+                {exercise}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="mt-4 flex justify-between items-center">
+          <span className="text-red-500 font-semibold">{workout.calories} kcal</span>
+          <span className="text-gray-500 text-sm">{workout.date}</span>
+        </div>
+      </div>
+    </motion.div>
+  );
+
+  // Meal Card Component
+  const MealCard = ({ meal }) => (
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      className="bg-white rounded-lg shadow-md overflow-hidden"
+    >
+      <img
+        src={meal.image}
+        alt={meal.name}
+        className="w-full h-48 object-cover"
+      />
+      <div className="p-4">
+        <h3 className="text-xl font-semibold text-gray-800">{meal.name}</h3>
+        <div className="mt-2">
+          <p className="text-sm text-gray-600">Ingredients:</p>
+          <div className="flex flex-wrap gap-2 mt-1">
+            {meal.ingredients.map((ingredient, index) => (
+              <span
+                key={index}
+                className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full"
+              >
+                {ingredient}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          <div className="text-center">
+            <p className="text-sm text-gray-600">Protein</p>
+            <p className="font-semibold">{meal.protein}g</p>
+          </div>
+          <div className="text-center">
+            <p className="text-sm text-gray-600">Carbs</p>
+            <p className="font-semibold">{meal.carbs}g</p>
+          </div>
+          <div className="text-center">
+            <p className="text-sm text-gray-600">Fat</p>
+            <p className="font-semibold">{meal.fat}g</p>
+          </div>
+        </div>
+        <div className="mt-4 flex justify-between items-center">
+          <span className="text-red-500 font-semibold">{meal.calories} kcal</span>
+          <span className="text-gray-500 text-sm">{meal.date}</span>
+        </div>
+      </div>
+    </motion.div>
+  );
+
+  // Achievement Card Component
+  const AchievementCard = ({ achievement }) => (
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      className="bg-white rounded-lg shadow-md p-4"
+    >
+      <div className="flex items-start space-x-4">
+        <div className="text-4xl">{achievement.icon}</div>
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800">{achievement.title}</h3>
+          <p className="text-gray-600 mt-1">{achievement.description}</p>
+          <p className="text-sm text-gray-500 mt-2">{achievement.date}</p>
+        </div>
+      </div>
+    </motion.div>
+  );
+
+  if (loading && !user) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
-      <div className="w-full flex items-center justify-center flex-col bg-gray-100">
-        <div className=" w-[800px] bg-white rounded-lg">
-          {/* <section className=" flex items-center top-0 bg-opacity-95 ">
-            <p className="py-5 text-xl font-bold  ml-1 ">{user?.name}</p>
-          </section> */}
-
-          <section>
+      <div className="min-h-screen bg-gray-100">
+        {/* Cover Photo Section */}
+        <div className="relative">
+          <div className="h-96 w-full">
             <img
-              className="w-full h-64 object-cover"
+              className="w-full h-full object-cover"
               src="https://hometriangle.com/blogs/content/images/2022/02/Home-Gym-for-Small-Spaces-1.png"
-              alt=""
+              alt="Cover"
             />
-          </section>
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50"></div>
+          </div>
 
-          <section className="pl-6">
-            <div className="flex justify-between items-start mt-5 h-20 ">
-              <img
-                className="-mt-28 w-40 h-40  border-4 border-white rounded-full "
-                alt="w"
-                src={user?.profileImage}
-              />
-
-              {loginUser?.id !== user?.id ? (
-                <button
-                  onClick={handleFollowUser}
-                  className="bg-blue-700 text-white px-4 py-2 rounded-3xl"
+          {/* Profile Picture and Name */}
+          <div className="absolute bottom-0 left-0 right-0 px-8 pb-6">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex items-end space-x-6">
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                  className="relative"
                 >
-                  {user?.followingUsers?.includes(loginUser?.id)
-                    ? "Unfollow"
-                    : "Follow"}
-                </button>
-              ) : null}
-            </div>
-
-            <div>
-              <div className="flex item-center flex-col">
-                <h1 className="font-bold text-lg">{user?.name}</h1>
+                  <img
+                    className="w-40 h-40 rounded-full border-4 border-white shadow-lg"
+                    src={user?.profileImage}
+                    alt="Profile"
+                  />
+                  <div className="absolute bottom-0 right-0 bg-green-500 rounded-full p-1 border-2 border-white">
+                    <FaUserCheck className="text-white text-sm" />
+                  </div>
+                </motion.div>
+                <div className="flex-1">
+                  <h1 className="text-3xl font-bold text-white">{user?.name}</h1>
+                  <p className="text-gray-200 mt-1">Fitness Enthusiast</p>
+                </div>
+                {loginUser?.id !== user?.id && (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleFollowUser}
+                    className={`px-6 py-2 rounded-full font-semibold ${
+                      user?.followingUsers?.includes(loginUser?.id)
+                        ? "bg-gray-200 text-gray-800"
+                        : "bg-blue-600 text-white"
+                    }`}
+                  >
+                    {user?.followingUsers?.includes(loginUser?.id)
+                      ? "Following"
+                      : "Follow"}
+                  </motion.button>
+                )}
               </div>
             </div>
-
-            <div className="mt-2 space-y-3">
-              <p>Hey there!</p>
-              <div className="flex items-center space-x-5">
-                <div className="flex items-center space-x-1 font-semibold">
-                  <span>{user?.followingCount}</span>
-                  <span className="text-gray-500">Following</span>
-                </div>
-                <div className="flex items-center space-x-1 font-semibold">
-                  <span>{user?.followersCount}</span>
-                  <span className="text-gray-500">Followers</span>
-                </div>
-              </div>
-            </div>
-          </section>
+          </div>
         </div>
-        <div className="mt-10 ">
-          {/* <p className="text-xl font-bold">
-            {user?.name}
-            <span className="text-gray-500"> 's Posts</span>
-          </p> */}
-          {posts?.map((post, index) => {
-            return (
-              <PostsList
-                post={post}
-                user={loginUser}
-                key={index}
-                //   onUpdatePost={updatePost}
-                //   onDeletePost={deletePost}
-                reFetchPost={reFetchPost}
-                setReFetchPost={setReFetchPost}
-              />
-            );
-          })}
+
+        {/* Stats Section */}
+        <div className="max-w-7xl mx-auto px-8 -mt-8">
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="grid grid-cols-4 gap-4">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                className="text-center p-4"
+              >
+                <div className="text-3xl font-bold text-purple-600">{stats.workouts}</div>
+                <div className="text-gray-600">Workouts</div>
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                className="text-center p-4"
+              >
+                <div className="text-3xl font-bold text-blue-600">{stats.meals}</div>
+                <div className="text-gray-600">Meal Plans</div>
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                className="text-center p-4"
+              >
+                <div className="text-3xl font-bold text-green-600">{stats.posts}</div>
+                <div className="text-gray-600">Posts</div>
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                className="text-center p-4"
+              >
+                <div className="text-3xl font-bold text-yellow-600">{stats.achievements}</div>
+                <div className="text-gray-600">Achievements</div>
+              </motion.div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs Section */}
+        <div className="max-w-7xl mx-auto px-8 mt-8">
+          <TETabs fill className="bg-white rounded-lg shadow-sm">
+            <TETabsItem
+              onClick={() => setActiveTab("posts")}
+              active={activeTab === "posts"}
+              color="primary"
+              className="px-6 py-3 text-sm font-medium rounded-md transition-colors duration-200"
+            >
+              Posts
+            </TETabsItem>
+            <TETabsItem
+              onClick={() => setActiveTab("workouts")}
+              active={activeTab === "workouts"}
+              color="primary"
+              className="px-6 py-3 text-sm font-medium rounded-md transition-colors duration-200"
+            >
+              Workouts
+            </TETabsItem>
+            <TETabsItem
+              onClick={() => setActiveTab("meals")}
+              active={activeTab === "meals"}
+              color="primary"
+              className="px-6 py-3 text-sm font-medium rounded-md transition-colors duration-200"
+            >
+              Meals
+            </TETabsItem>
+            <TETabsItem
+              onClick={() => setActiveTab("about")}
+              active={activeTab === "about"}
+              color="primary"
+              className="px-6 py-3 text-sm font-medium rounded-md transition-colors duration-200"
+            >
+              About
+            </TETabsItem>
+          </TETabs>
+        </div>
+
+        {/* Content Section */}
+        <div className="max-w-7xl mx-auto px-8 mt-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            {activeTab === "posts" && (
+              <div className="space-y-6">
+                {posts?.map((post, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                  >
+                    <PostsList
+                      post={post}
+                      user={loginUser}
+                      reFetchPost={reFetchPost}
+                      setReFetchPost={setReFetchPost}
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            {activeTab === "workouts" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {demoWorkouts.map((workout, index) => (
+                  <motion.div
+                    key={workout.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                  >
+                    <WorkoutCard workout={workout} />
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            {activeTab === "meals" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {demoMeals.map((meal, index) => (
+                  <motion.div
+                    key={meal.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                  >
+                    <MealCard meal={meal} />
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            {activeTab === "about" && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h2 className="text-2xl font-bold text-gray-800 mb-4">About Me</h2>
+                  <p className="text-gray-600">
+                    Fitness enthusiast with a passion for healthy living and personal development. 
+                    I believe in the power of consistent exercise and proper nutrition to transform lives.
+                  </p>
+                </div>
+
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h2 className="text-2xl font-bold text-gray-800 mb-4">Achievements</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {demoAchievements.map((achievement, index) => (
+                      <motion.div
+                        key={achievement.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.1 }}
+                      >
+                        <AchievementCard achievement={achievement} />
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h2 className="text-2xl font-bold text-gray-800 mb-4">Fitness Goals</h2>
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-4">
+                      <FaChartLine className="text-purple-500 text-xl" />
+                      <div>
+                        <h3 className="font-semibold">Weight Loss</h3>
+                        <p className="text-gray-600">Target: 10kg in 3 months</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <FaHeartbeat className="text-red-500 text-xl" />
+                      <div>
+                        <h3 className="font-semibold">Cardio Improvement</h3>
+                        <p className="text-gray-600">Run 5km in under 25 minutes</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <FaDumbbell className="text-blue-500 text-xl" />
+                      <div>
+                        <h3 className="font-semibold">Strength Training</h3>
+                        <p className="text-gray-600">Bench press 100kg</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </motion.div>
         </div>
       </div>
     </Layout>
