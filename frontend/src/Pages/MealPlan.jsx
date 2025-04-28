@@ -18,7 +18,7 @@ const MealPlan = ({ user }) => {
           setMealPlans(res.data);
         }
       } catch (error) {
-        toast.error("Failed to fetch meal plans");
+        toast.error("Failed to fetch meal plans"); //
       }
     };
     fetchMealPlans();
