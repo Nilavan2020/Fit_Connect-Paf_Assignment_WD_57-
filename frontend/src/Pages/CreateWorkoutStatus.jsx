@@ -14,7 +14,7 @@ const CreateWorkouStatus = () => {
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
   const [user, setUser] = useState({});
-  const [editStatus, setEditStatus] = useState(false);
+  const [editStatus, setEditStatus] = useState(false); //
 
   const { statusId } = useParams();
 
@@ -25,7 +25,7 @@ const CreateWorkouStatus = () => {
           `http://localhost:8080/workoutStatus/${statusId}`
         );
         setWeight(data.weight);
-        setDistance(data.distance);
+        setDistance(data.distance);//
         setPushups(data.pushUps);
         setDescription(data.description);
         setDate(data.date);
