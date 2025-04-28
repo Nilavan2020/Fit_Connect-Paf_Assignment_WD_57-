@@ -10,6 +10,7 @@ import { IoClose } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useState } from "react";
+import config from "../config";
 
 const PostsList = ({
   post,
@@ -29,15 +30,110 @@ const PostsList = ({
   const [shareDescription, setShareDescription] = useState("");
 
   const navigate = useNavigate();
-  const likeBtnClick = async (post) => {
+
+  const handleLike = async (postId) => {
     try {
-      const res = await axios.post(
-        `http://localhost:8080/posts/like?postId=${post.id}&userId=${user.id}`
+      console.log('Attempting to like post:', {
+        postId,
+        userId: user.id,
+        apiUrl: `${config.apiBaseUrl}/posts/like?postId=${postId}&userId=${user.id}`
+      });
+
+      const response = await axios.post(
+        `${config.apiBaseUrl}/posts/like?postId=${postId}&userId=${user.id}`
       );
-      console.log(res.data);
-      setReFetchPost(!reFetchPost);
+
+      console.log('Server response:', response);
+
+      if (response.status === 200) {
+        const updatedPost = response.data;
+        console.log('Updated post data:', updatedPost);
+        
+        // Update the post state
+        onUpdatePost({
+          ...post,
+          likedBy: updatedPost.likedBy || [],
+          likeCount: updatedPost.likeCount || 0
+        });
+        
+        // Refresh the posts list
+        setReFetchPost(!reFetchPost);
+        toast.success('Post liked successfully');
+      } else {
+        console.error('Unexpected response status:', response.status);
+        toast.error('Failed to like post');
+      }
     } catch (error) {
-      console.log(error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      if (error.response?.status === 404) {
+        toast.error('Post not found');
+      } else if (error.response?.status === 500) {
+        toast.error('Server error occurred');
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to like post');
+      }
+    }
+  };
+
+  const handleComment = async (postId, commentText) => {
+    try {
+      const response = await axios.post(
+        `${config.apiBaseUrl}/api/comments`,
+        {
+          postId,
+          userId: user.id,
+          content: commentText
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.data.success) {
+        onUpdatePost({
+          ...post,
+          comments: [...post.comments, response.data.data]
+        });
+      } else {
+        toast.error(response.data.message || 'Failed to add comment');
+      }
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      toast.error(error.response?.data?.message || 'Failed to add comment');
+    }
+  };
+
+  const handleShare = async (postId) => {
+    try {
+      const response = await axios.post(
+        `${config.apiBaseUrl}/api/share-posts`,
+        {
+          postId,
+          userId: user.id
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.data.success) {
+        toast.success('Post shared successfully');
+        setReFetchSharedPost(!reFetchSharedPost);
+      } else {
+        toast.error(response.data.message || 'Failed to share post');
+      }
+    } catch (error) {
+      console.error('Error sharing post:', error);
+      toast.error(error.response?.data?.message || 'Failed to share post');
     }
   };
 
@@ -112,24 +208,6 @@ const PostsList = ({
   const handleEditComment = (comment, postId) => {
     setComment(comment.content);
     setEditComment(true);
-  };
-
-  const handleShare = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await axios.post(`http://localhost:8080/share`, {
-        description: shareDescription,
-        userid: user.id,
-        postId: post.id,
-      });
-      if (res.data) {
-        setShareModal(false);
-        toast.success("Post shared successfully");
-        setReFetchSharedPost(!reFetchSharedPost);
-      }
-    } catch (error) {
-      console.log(error);
-    }
   };
 
   return (
@@ -226,24 +304,22 @@ const PostsList = ({
           </div>
           <div className=" h-16 border-b  flex items-center justify-around	">
             <div className="flex items-center	gap-3	cursor-pointer">
-              {post?.likedBy?.includes(user?.id) ? (
-                <>
-                  <FaHeart
-                    size={24}
-                    color="red"
-                    onClick={() => likeBtnClick(post)}
-                  />
-                </>
+              {post.likedBy?.includes(user.id) ? (
+                <FaHeart
+                  size={24}
+                  color="red"
+                  onClick={() => handleLike(post.id)}
+                  className="cursor-pointer hover:scale-110 transition-transform"
+                />
               ) : (
-                <>
-                  <CiHeart
-                    size={24}
-                    color="red"
-                    onClick={() => likeBtnClick(post)}
-                  />
-                </>
+                <CiHeart
+                  size={24}
+                  color="red"
+                  onClick={() => handleLike(post.id)}
+                  className="cursor-pointer hover:scale-110 transition-transform"
+                />
               )}
-              <p> {post?.likeCount} Like</p>
+              <p className="text-gray-600">{post.likeCount || 0} Like{post.likeCount !== 1 ? 's' : ''}</p>
             </div>
             <div
               className="flex items-center	gap-3 cursor-pointer"
@@ -369,7 +445,10 @@ const PostsList = ({
                     onClick={() => setShareModal(false)}
                   />
                 </div>
-                <form className="flex flex-col" onSubmit={handleShare}>
+                <form className="flex flex-col" onSubmit={(e) => {
+                  e.preventDefault();
+                  handleShare(post.id);
+                }}>
                   <textarea
                     className="border h-32 p-2"
                     placeholder="Write something"

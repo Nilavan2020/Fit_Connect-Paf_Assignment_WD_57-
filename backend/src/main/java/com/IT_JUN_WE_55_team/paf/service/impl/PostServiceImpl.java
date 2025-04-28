@@ -85,30 +85,45 @@ public class PostServiceImpl implements PostService {
     @Override
     public ResponseEntity<Object> likePost(String postId, String userId) {
         try {
+            System.out.println("Processing like request - PostId: " + postId + ", UserId: " + userId);
+
             Post post = postRepository.findById(postId)
-                    .orElseThrow(() -> new RuntimeException("Post not found with id: " + postId));
+                    .orElseThrow(() -> {
+                        System.err.println("Post not found with id: " + postId);
+                        return new RuntimeException("Post not found with id: " + postId);
+                    });
 
             User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+                    .orElseThrow(() -> {
+                        System.err.println("User not found with id: " + userId);
+                        return new RuntimeException("User not found with id: " + userId);
+                    });
 
             if (post.getLikedBy() == null) {
                 post.setLikedBy(new ArrayList<>());
             }
 
-            if (post.getLikedBy().contains(userId)) {
+            boolean isLiked = post.getLikedBy().contains(userId);
+            System.out.println("Current like status: " + (isLiked ? "liked" : "not liked"));
+
+            if (isLiked) {
                 post.getLikedBy().remove(userId);
                 post.setLikeCount(post.getLikeCount() - 1);
-                postRepository.save(post);
-                return new ResponseEntity<>(post, HttpStatus.OK);
+                System.out.println("Post unliked - New like count: " + post.getLikeCount());
             } else {
                 post.getLikedBy().add(userId);
                 post.setLikeCount(post.getLikeCount() + 1);
-                postRepository.save(post);
-                return new ResponseEntity<>(post, HttpStatus.OK);
+                System.out.println("Post liked - New like count: " + post.getLikeCount());
             }
+
+            Post savedPost = postRepository.save(post);
+            System.out.println("Post saved successfully: " + savedPost);
+
+            return new ResponseEntity<>(savedPost, HttpStatus.OK);
         } catch (RuntimeException e) {
+            System.err.println("Error in likePost service: " + e.getMessage());
             e.printStackTrace();
-            return new ResponseEntity<>("Server Error", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Error processing like request: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

@@ -214,7 +214,7 @@ public class UserService {
         try {
             Optional<User> existingUser = userRepository.findById(userId);
             if (existingUser.isEmpty()) {
-                return createErrorResponse("User not found", HttpStatus.NOT_FOUND);
+                return ResponseEntity.badRequest().body(createErrorResponse("User not found"));
             }
 
             User user = existingUser.get();
@@ -234,14 +234,9 @@ public class UserService {
             }
 
             User savedUser = userRepository.save(user);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "User updated successfully");
-            response.put("data", savedUser);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok().body(createSuccessResponse(savedUser));
         } catch (Exception e) {
-            return createErrorResponse("Error updating user: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.badRequest().body(createErrorResponse("Error updating user: " + e.getMessage()));
         }
     }
 
@@ -249,24 +244,13 @@ public class UserService {
         try {
             Optional<User> existingUser = userRepository.findById(userId);
             if (existingUser.isEmpty()) {
-                return createErrorResponse("User not found", HttpStatus.NOT_FOUND);
+                return ResponseEntity.badRequest().body(createErrorResponse("User not found"));
             }
 
             userRepository.deleteById(userId);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "User deleted successfully");
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok().body(createSuccessResponse("User deleted successfully"));
         } catch (Exception e) {
-            return createErrorResponse("Error deleting user: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.badRequest().body(createErrorResponse("Error deleting user: " + e.getMessage()));
         }
-    }
-
-    private ResponseEntity<Object> createErrorResponse(String message, HttpStatus status) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", false);
-        response.put("message", message);
-        return ResponseEntity.status(status).body(response);
     }
 }

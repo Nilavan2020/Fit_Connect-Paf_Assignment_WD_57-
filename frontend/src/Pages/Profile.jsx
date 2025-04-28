@@ -3,7 +3,7 @@ import Layout from "../components/Layout";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import PostsList from "../components/PostsList";
-import { FaUserFriends, FaUserPlus, FaUserCheck, FaEllipsisH, FaDumbbell, FaUtensils, FaTrophy, FaChartLine, FaHeartbeat, FaEdit, FaTrash, FaCamera, FaUpload, FaTimes } from "react-icons/fa";
+import { FaUserFriends, FaUserPlus, FaUserCheck, FaEllipsisH, FaDumbbell, FaUtensils, FaTrophy, FaChartLine, FaHeartbeat, FaEdit, FaTrash, FaCamera, FaUpload, FaTimes, FaThumbsUp, FaComment, FaShare } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { TETabs, TETabsItem } from "tw-elements-react";
 import toast from "react-hot-toast";
@@ -102,6 +102,58 @@ const demoAchievements = [
   }
 ];
 
+// Add demo posts data at the top of the file
+const demoPosts = [
+  {
+    id: 1,
+    content: "Just completed an amazing workout session! Feeling energized and ready to take on the day. 💪 #FitnessMotivation #Workout",
+    likes: 24,
+    comments: 8,
+    shares: 3,
+    createdAt: "2024-03-15T10:30:00",
+    user: {
+      name: "John Doe",
+      profileImage: "https://randomuser.me/api/portraits/men/1.jpg"
+    },
+    images: [
+      "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+    ],
+    liked: false
+  },
+  {
+    id: 2,
+    content: "New personal best in my morning run! 5km in 22 minutes. The hard work is paying off. 🏃‍♂️ #Running #FitnessGoals",
+    likes: 45,
+    comments: 12,
+    shares: 5,
+    createdAt: "2024-03-14T08:15:00",
+    user: {
+      name: "John Doe",
+      profileImage: "https://randomuser.me/api/portraits/men/1.jpg"
+    },
+    images: [
+      "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+    ],
+    liked: false
+  },
+  {
+    id: 3,
+    content: "Meal prep Sunday! Healthy and delicious meals for the week. Eating clean never tasted so good. 🥗 #MealPrep #HealthyEating",
+    likes: 32,
+    comments: 15,
+    shares: 7,
+    createdAt: "2024-03-13T16:45:00",
+    user: {
+      name: "John Doe",
+      profileImage: "https://randomuser.me/api/portraits/men/1.jpg"
+    },
+    images: [
+      "https://images.unsplash.com/photo-1490645935967-10de6ba17061?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+    ],
+    liked: false
+  }
+];
+
 const Profile = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -127,6 +179,58 @@ const Profile = () => {
   const [showUploadOptions, setShowUploadOptions] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [demoPosts, setDemoPosts] = useState([
+    {
+      id: 1,
+      content: "Just completed an amazing workout session! Feeling energized and ready to take on the day. 💪 #FitnessMotivation #Workout",
+      likes: 24,
+      comments: 8,
+      shares: 3,
+      createdAt: "2024-03-15T10:30:00",
+      user: {
+        name: "John Doe",
+        profileImage: "https://randomuser.me/api/portraits/men/1.jpg"
+      },
+      images: [
+        "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+      ],
+      liked: false
+    },
+    {
+      id: 2,
+      content: "New personal best in my morning run! 5km in 22 minutes. The hard work is paying off. 🏃‍♂️ #Running #FitnessGoals",
+      likes: 45,
+      comments: 12,
+      shares: 5,
+      createdAt: "2024-03-14T08:15:00",
+      user: {
+        name: "John Doe",
+        profileImage: "https://randomuser.me/api/portraits/men/1.jpg"
+      },
+      images: [
+        "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+      ],
+      liked: false
+    },
+    {
+      id: 3,
+      content: "Meal prep Sunday! Healthy and delicious meals for the week. Eating clean never tasted so good. 🥗 #MealPrep #HealthyEating",
+      likes: 32,
+      comments: 15,
+      shares: 7,
+      createdAt: "2024-03-13T16:45:00",
+      user: {
+        name: "John Doe",
+        profileImage: "https://randomuser.me/api/portraits/men/1.jpg"
+      },
+      images: [
+        "https://images.unsplash.com/photo-1490645935967-10de6ba17061?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+      ],
+      liked: false
+    }
+  ]);
+  const [commentText, setCommentText] = useState("");
+  const [selectedPost, setSelectedPost] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -186,6 +290,12 @@ const Profile = () => {
     }
   };
 
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return '/default-profile.png';
+    if (imagePath.startsWith('http')) return imagePath;
+    return `${config.imageBaseUrl}/${imagePath.split('/').pop()}`;
+  };
+
   const handleEditProfile = () => {
     setEditedUser({ ...user });
     setIsEditing(true);
@@ -194,8 +304,13 @@ const Profile = () => {
   const handleSaveProfile = async () => {
     try {
       const response = await axios.put(
-        `${config.apiBaseUrl}/users/${user._id}`,
-        editedUser
+        `${config.apiBaseUrl}/api/users/${user.id}`,
+        editedUser,
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
       );
 
       if (response.data.success) {
@@ -215,7 +330,12 @@ const Profile = () => {
     if (window.confirm('Are you sure you want to delete your profile? This action cannot be undone.')) {
       try {
         const response = await axios.delete(
-          `${config.apiBaseUrl}/users/${user._id}`
+          `${config.apiBaseUrl}/api/users/${user.id}`,
+          {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
         );
 
         if (response.data.success) {
@@ -238,89 +358,6 @@ const Profile = () => {
       ...prev,
       [name]: value
     }));
-  };
-
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.match(/image\/(jpeg|png|jpg)/)) {
-      setUploadError('Only JPG, JPEG, and PNG files are allowed');
-      return;
-    }
-
-    // Validate file size (10MB limit)
-    if (file.size > 10 * 1024 * 1024) {
-      setUploadError('File size must be less than 10MB');
-      return;
-    }
-
-    setSelectedFile(file);
-    
-    // Create preview URL
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPreviewUrl(reader.result);
-      setShowUploadOptions(true);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleUpload = async () => {
-    if (!selectedFile) return;
-
-    setUploading(true);
-    setUploadError(null);
-
-    try {
-      const formData = new FormData();
-      formData.append('image', selectedFile);
-
-      const uploadResponse = await axios.post(
-        `${config.apiBaseUrl}/users/${user._id}/upload-profile-image`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        }
-      );
-
-      if (uploadResponse.data.success) {
-        setUser(prev => ({
-          ...prev,
-          profileImage: uploadResponse.data.data.filePath
-        }));
-        toast.success('Profile image updated successfully');
-        setShowUploadOptions(false);
-        setPreviewUrl(null);
-        setSelectedFile(null);
-      } else {
-        setUploadError(uploadResponse.data.message || 'Failed to upload image');
-      }
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      setUploadError(
-        error.response?.data?.message || 
-        'An error occurred while uploading the image'
-      );
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleCancel = () => {
-    setShowUploadOptions(false);
-    setPreviewUrl(null);
-    setSelectedFile(null);
-    setUploadError(null);
-  };
-
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) return '/default-profile.png';
-    if (imagePath.startsWith('http')) return imagePath;
-    return `${config.imageBaseUrl}/${imagePath.split('/').pop()}`;
   };
 
   // Workout Card Component
@@ -426,6 +463,125 @@ const Profile = () => {
     </motion.div>
   );
 
+  const handleLike = async (postId) => {
+    try {
+      const response = await axios.post(
+        `${config.apiBaseUrl}/posts/like?postId=${postId}&userId=${loginUser.id}`,
+        {},
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.status === 200) {
+        setDemoPosts(posts => 
+          posts.map(post => {
+            if (post.id === postId) {
+              return {
+                ...post,
+                likes: post.liked ? post.likes - 1 : post.likes + 1,
+                liked: !post.liked
+              };
+            }
+            return post;
+          })
+        );
+        toast.success('Post liked successfully');
+      } else {
+        toast.error('Failed to like post');
+      }
+    } catch (error) {
+      console.error('Error liking post:', error);
+      toast.error(error.response?.data?.message || 'Failed to like post');
+    }
+  };
+
+  const handleComment = async (postId) => {
+    if (!commentText.trim()) {
+      toast.error('Please enter a comment');
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        `${config.apiBaseUrl}/posts/${postId}/comments`,
+        {
+          content: commentText,
+          commentBy: loginUser.name,
+          commentById: loginUser.id,
+          commentByProfile: loginUser.profileImage
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.status === 201) {
+        setDemoPosts(posts => 
+          posts.map(post => {
+            if (post.id === postId) {
+              return {
+                ...post,
+                comments: post.comments + 1
+              };
+            }
+            return post;
+          })
+        );
+        setCommentText("");
+        setSelectedPost(null);
+        toast.success('Comment added successfully');
+      } else {
+        toast.error('Failed to add comment');
+      }
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      toast.error(error.response?.data?.message || 'Failed to add comment');
+    }
+  };
+
+  const handleShare = async (postId) => {
+    try {
+      const response = await axios.post(
+        `${config.apiBaseUrl}/share`,
+        {
+          postId: postId,
+          userid: loginUser.id,
+          description: "Shared post"
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.status === 201) {
+        setDemoPosts(posts => 
+          posts.map(post => {
+            if (post.id === postId) {
+              return {
+                ...post,
+                shares: post.shares + 1
+              };
+            }
+            return post;
+          })
+        );
+        toast.success('Post shared successfully');
+      } else {
+        toast.error('Failed to share post');
+      }
+    } catch (error) {
+      console.error('Error sharing post:', error);
+      toast.error(error.response?.data?.message || 'Failed to share post');
+    }
+  };
+
   if (loading && !user) {
     return (
       <Layout>
@@ -466,20 +622,6 @@ const Profile = () => {
                       src={getImageUrl(previewUrl || user?.profileImage)}
                       alt="Profile"
                     />
-                    
-                    {/* Facebook-style hover overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <label className="cursor-pointer">
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/png,image/jpg"
-                          className="hidden"
-                          onChange={handleImageChange}
-                          disabled={uploading}
-                        />
-                        <FaCamera className="text-white text-2xl" />
-                      </label>
-                    </div>
                   </div>
                   <div className="absolute bottom-0 right-0 bg-green-500 rounded-full p-1 border-2 border-white">
                     <FaUserCheck className="text-white text-sm" />
@@ -529,22 +671,24 @@ const Profile = () => {
                         <h2 className="text-xl font-semibold">{user?.name}</h2>
                         <p className="text-gray-600">{user?.email}</p>
                       </div>
-                      <div className="flex space-x-4">
-                        <button
-                          onClick={handleEditProfile}
-                          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                          <FaEdit />
-                          <span>Edit Profile</span>
-                        </button>
-                        <button
-                          onClick={handleDeleteProfile}
-                          className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                        >
-                          <FaTrash />
-                          <span>Delete Profile</span>
-                        </button>
-                      </div>
+                      {loginUser?.id === user?.id && (
+                        <div className="flex space-x-4">
+                          <button
+                            onClick={handleEditProfile}
+                            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                          >
+                            <FaEdit />
+                            <span>Edit Profile</span>
+                          </button>
+                          <button
+                            onClick={handleDeleteProfile}
+                            className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                          >
+                            <FaTrash />
+                            <span>Delete Profile</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -568,58 +712,6 @@ const Profile = () => {
             </div>
           </div>
         </div>
-
-        {/* Upload Options Modal */}
-        {showUploadOptions && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Update Profile Picture</h2>
-                <button
-                  onClick={handleCancel}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <FaTimes />
-                </button>
-              </div>
-              
-              <div className="mb-4">
-                <img
-                  src={previewUrl}
-                  alt="Preview"
-                  className="w-full h-48 object-cover rounded-lg"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <button
-                  onClick={handleCancel}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleUpload}
-                  disabled={uploading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
-                >
-                  {uploading ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  ) : (
-                    <FaUpload />
-                  )}
-                  <span>Upload</span>
-                </button>
-              </div>
-
-              {uploadError && (
-                <div className="mt-2 text-red-500 text-sm">
-                  {uploadError}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Stats Section */}
         <div className="max-w-7xl mx-auto px-8 -mt-8">
@@ -704,19 +796,94 @@ const Profile = () => {
           >
             {activeTab === "posts" && (
               <div className="space-y-6">
-                {posts?.map((post, index) => (
+                {demoPosts.map((post) => (
                   <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                    key={post.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="bg-white rounded-lg shadow-md overflow-hidden"
                   >
-                    <PostsList
-                      post={post}
-                      user={loginUser}
-                      reFetchPost={reFetchPost}
-                      setReFetchPost={setReFetchPost}
-                    />
+                    {/* Post Header */}
+                    <div className="p-4 flex items-center space-x-3">
+                      <img
+                        src={post.user.profileImage}
+                        alt={post.user.name}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                      <div>
+                        <h3 className="font-semibold">{post.user.name}</h3>
+                        <p className="text-sm text-gray-500">
+                          {new Date(post.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Post Content */}
+                    <div className="px-4 pb-4">
+                      <p className="text-gray-800">{post.content}</p>
+                    </div>
+
+                    {/* Post Images */}
+                    {post.images && post.images.length > 0 && (
+                      <div className="px-4 pb-4">
+                        <img
+                          src={post.images[0]}
+                          alt="Post"
+                          className="w-full h-64 object-cover rounded-lg"
+                        />
+                      </div>
+                    )}
+
+                    {/* Post Actions */}
+                    <div className="px-4 py-3 border-t border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <button 
+                            onClick={() => handleLike(post.id)}
+                            className={`flex items-center space-x-1 ${post.liked ? 'text-blue-500' : 'text-gray-600 hover:text-blue-500'}`}
+                          >
+                            <FaThumbsUp />
+                            <span>{post.likes}</span>
+                          </button>
+                          <button 
+                            onClick={() => setSelectedPost(post.id)}
+                            className="flex items-center space-x-1 text-gray-600 hover:text-blue-500"
+                          >
+                            <FaComment />
+                            <span>{post.comments}</span>
+                          </button>
+                          <button 
+                            onClick={() => handleShare(post.id)}
+                            className="flex items-center space-x-1 text-gray-600 hover:text-blue-500"
+                          >
+                            <FaShare />
+                            <span>{post.shares}</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Comment Input */}
+                      {selectedPost === post.id && (
+                        <div className="mt-4">
+                          <div className="flex space-x-2">
+                            <input
+                              type="text"
+                              value={commentText}
+                              onChange={(e) => setCommentText(e.target.value)}
+                              placeholder="Write a comment..."
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            <button
+                              onClick={() => handleComment(post.id)}
+                              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                              Post
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </motion.div>
                 ))}
               </div>
