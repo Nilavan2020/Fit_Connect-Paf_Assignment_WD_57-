@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";// Import necessary libraries and modules
 import backgroundImg from "../images/mealBck1.jpg";
 import { TERipple } from "tw-elements-react";
 import { useNavigate } from "react-router-dom";
