@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { AiFillDelete, AiFillEdit } from "react-icons/ai";
-
+//import
 const MealPlan = ({ user }) => {
   const [mealPlans, setMealPlans] = useState([]);
   const navigate = useNavigate();
@@ -34,11 +34,11 @@ const MealPlan = ({ user }) => {
       toast.error("Failed to delete Meal Plan");
     }
   };
-
+ // Navigate to the edit meal plan page
   const navigateEditPage = (mealPlan) => {
-    navigate(`/CreateMealPlan/${mealPlan.mealPlanId}`);
+    navigate(`/CreateMealPlan/${mealPlan.mealPlanId}`); // Pass mealPlanId to edit page
   };
-
+// Return the main JSX to display meal plans
   return (
     <div
       className="container mx-auto p-4 min-h-screen"
@@ -136,3 +136,4 @@ const MealPlan = ({ user }) => {
 };
 
 export default MealPlan;
+// Export the MealPlan component
