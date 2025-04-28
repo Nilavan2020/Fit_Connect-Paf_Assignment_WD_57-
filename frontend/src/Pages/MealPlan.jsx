@@ -23,7 +23,7 @@ const MealPlan = ({ user }) => {
     };
     fetchMealPlans();
   }, []);
-
+// Delete meal plan function
   // Delete Meal Plan by ID
   const deleteMealPlan = async (mealPlan) => {
     try {
