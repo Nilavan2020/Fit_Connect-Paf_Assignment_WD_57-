@@ -36,7 +36,7 @@ const WorkoutStatus = ({ user }) => {
 
       toast.success("Workout status deleted successfully");
     } catch (error) {
-      toast.error("Failed to delete workout status");
+      toast.error("Failed to delete workout status");// Show error if fetch fails
     }
   };
   // Function to navigate to the edit page with the selected status ID
