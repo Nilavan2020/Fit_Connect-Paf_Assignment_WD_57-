@@ -124,3 +124,4 @@ const WorkoutStatus = ({ user }) => {
 };
 
 export default WorkoutStatus;
+// Compare this snippet from Paf-2025-FitConnect/frontend/src/Pages/CreateWorkoutStatus.jsx:
