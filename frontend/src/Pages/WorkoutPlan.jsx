@@ -5,12 +5,10 @@ import toast from 'react-hot-toast';
 import { AiFillDelete, AiFillEdit } from 'react-icons/ai';
 import backgroundImg from '../images/statusBck.jpg';
 
-
 const WorkoutPlan = ({ user }) => {
   const [workoutPlans, setWorkoutPlans] = useState([]);
 
   const navigate = useNavigate();
-
 
   useEffect(() => {
     const fetchWorkoutPlans = async () => {
@@ -29,43 +27,19 @@ const WorkoutPlan = ({ user }) => {
   // Delete Workout Plans by ID
   const deleteWorkoutPlan = async (plan) => {
     try {
-      console.log('Deleting plan with ID:', plan.workoutPlanId);
-      const response = await axios.delete(`http://localhost:8080/workoutPlans/${plan.workoutPlanId}`);
-      console.log('Delete response:', response);
-      
-      if (response.status === 200 || response.status === 204) {
-        setWorkoutPlans((prevPlans) =>
-          prevPlans.filter((p) => p.workoutPlanId !== plan.workoutPlanId)
-        );
-        toast.success("Workout plan deleted successfully");
-      } else {
-        toast.error("Failed to delete workout plan: Unexpected response");
-      }
+      await axios.delete(`http://localhost:8080/workoutPlans/${plan.planId}`);
+      setWorkoutPlans((prevPlans) =>
+        prevPlans.filter((p) => p.planId !== plan.planId)
+      );
+      toast.success("Workout plan deleted successfully");
     } catch (error) {
-      console.error('Delete error:', error);
-      if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
-        toast.error(`Failed to delete workout plan: ${error.response.data.message || error.response.statusText}`);
-      } else if (error.request) {
-        // The request was made but no response was received
-        toast.error("Failed to delete workout plan: No response from server");
-      } else {
-        // Something happened in setting up the request that triggered an Error
-        toast.error(`Failed to delete workout plan: ${error.message}`);
-      }
+      toast.error("Failed to delete workout plan");
     }
   };
 
-
   const navigateEditPage = (plan) => {
-    navigate(`/CreateWorkoutPlan/${plan.workoutPlanId}`);
+    navigate(`/CreateWorkoutPlan/${plan.planId}`);
   };
-
-  // Function to handle click event
-  // const goToWorkoutPlan = () => {
-  //   navigate('/CreateWorkoutPlan'); // Use the route you want to navigate to
-  // };
 
   return (
     <div
@@ -78,9 +52,10 @@ const WorkoutPlan = ({ user }) => {
         backgroundAttachment: "fixed",
       }}
     >
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center mb-4">
+        {/* Optional create button if needed */}
         {/* <button
-          onClick={goToWorkoutPlan}
+          onClick={() => navigate('/CreateWorkoutPlan')}
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300"
         >
           Create New Workout Plan
@@ -108,6 +83,7 @@ const WorkoutPlan = ({ user }) => {
                   <p className="text-sm text-gray-500">Plan for {plan.date}</p>
                 </div>
               </div>
+
               <div className="flex space-x-3">
                 {user?.id === plan?.userId && (
                   <>
@@ -127,12 +103,14 @@ const WorkoutPlan = ({ user }) => {
                 )}
               </div>
             </div>
-            
+
             <div className="space-y-3 mt-4">
               <div className="grid grid-cols-3 gap-4">
                 <div className="bg-purple-50 p-3 rounded-lg">
                   <p className="text-sm text-gray-600">Target Distance</p>
-                  <p className="text-lg font-semibold">{plan.targetDistance} <span className="text-sm">km</span></p>
+                  <p className="text-lg font-semibold">
+                    {plan.targetDistance} <span className="text-sm">km</span>
+                  </p>
                 </div>
                 <div className="bg-blue-50 p-3 rounded-lg">
                   <p className="text-sm text-gray-600">Target Push-ups</p>
@@ -140,21 +118,23 @@ const WorkoutPlan = ({ user }) => {
                 </div>
                 <div className="bg-green-50 p-3 rounded-lg">
                   <p className="text-sm text-gray-600">Target Weight</p>
-                  <p className="text-lg font-semibold">{plan.targetWeight} <span className="text-sm">kg</span></p>
+                  <p className="text-lg font-semibold">
+                    {plan.targetWeight} <span className="text-sm">kg</span>
+                  </p>
                 </div>
               </div>
-              
+
               <div className="mt-4 bg-gray-50 p-4 rounded-lg">
                 <h3 className="text-md font-semibold text-gray-700 mb-2">Plan Description</h3>
                 <p className="text-gray-600">{plan.description}</p>
               </div>
             </div>
+
           </div>
         ))}
       </div>
     </div>
   );
 };
-
 
 export default WorkoutPlan;

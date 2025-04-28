@@ -3,25 +3,19 @@ package com.IT_JUN_WE_55_team.paf.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.IT_JUN_WE_55_team.paf.DTO.UserDTO;
 import com.IT_JUN_WE_55_team.paf.model.User;
 import com.IT_JUN_WE_55_team.paf.service.UserService;
-import com.IT_JUN_WE_55_team.paf.service.ProfileImageService;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/users")
-@CrossOrigin(origins = "*")
+@RequestMapping("/users")
 public class UserController {
 
     @Autowired
     private UserService userService;
-
-    @Autowired
-    private ProfileImageService profileImageService;
 
     @PostMapping("/register")
     public ResponseEntity<Object> createUser(@RequestBody User user) {
@@ -40,31 +34,13 @@ public class UserController {
 
     @PostMapping("/follow")
     public ResponseEntity<Object> followUser(@RequestParam String userId, @RequestParam String FollowedUserId) {
-        return userService.followUser(userId, FollowedUserId);
+        return userService.followUser(userId,FollowedUserId);
     }
-
     @PostMapping("/login")
     public ResponseEntity<Object> loginUser(@RequestBody User user) {
+
         return userService.loginUser(user.getEmail(), user.getPassword());
-    }
 
-    @PutMapping("/{userId}")
-    public ResponseEntity<Object> updateUser(
-            @PathVariable String userId,
-            @RequestBody User updatedUser) {
-        return userService.updateUser(userId, updatedUser);
-    }
-
-    @DeleteMapping("/{userId}")
-    public ResponseEntity<Object> deleteUser(@PathVariable String userId) {
-        return userService.deleteUser(userId);
-    }
-
-    @PostMapping("/{userId}/upload-profile-image")
-    public ResponseEntity<Object> uploadProfileImage(
-            @PathVariable String userId,
-            @RequestParam("image") MultipartFile image) {
-        return profileImageService.uploadProfileImage(userId, image);
     }
 }
 

@@ -50,16 +50,7 @@ public class PostController {
 
     @PostMapping("/like")
     public ResponseEntity<Object> likePost(@RequestParam String postId, @RequestParam String userId) {
-        try {
-            System.out.println("Received like request - PostId: " + postId + ", UserId: " + userId);
-            ResponseEntity<Object> response = postService.likePost(postId, userId);
-            System.out.println("Like response: " + response);
-            return response;
-        } catch (Exception e) {
-            System.err.println("Error in likePost endpoint: " + e.getMessage());
-            e.printStackTrace();
-            return new ResponseEntity<>("Error processing like request: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return postService.likePost(postId,userId);
     }
 
     @GetMapping("user/{userId}")

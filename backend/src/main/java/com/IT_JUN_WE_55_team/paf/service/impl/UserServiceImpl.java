@@ -1,24 +1,22 @@
 package com.IT_JUN_WE_55_team.paf.service.impl;
 
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.IT_JUN_WE_55_team.paf.DTO.UserDTO;
-import com.IT_JUN_WE_55_team.paf.DTO.UserResDTO;
-import com.IT_JUN_WE_55_team.paf.model.RegistrationSource;
 import com.IT_JUN_WE_55_team.paf.model.User;
 import com.IT_JUN_WE_55_team.paf.repo.UserRepository;
 import com.IT_JUN_WE_55_team.paf.service.UserService;
 
-import java.util.ArrayList;
+import java.io.IOException;
+import java.util.Base64;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -26,59 +24,49 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private Map<String, Object> createErrorResponse(String message) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("message", message);
+        return response;
+    }
+
+    private Map<String, Object> createSuccessResponse(Object data) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", data);
+        return response;
+    }
+
     @Override
     public ResponseEntity<Object> createUser(User user) {
-
-        if(user.getSource() == null){
-            if (userRepository.existsByEmail(user.getEmail())) {
-                return new ResponseEntity<>("Username already exists", HttpStatus.CONFLICT);
+        try {
+            if (userRepository.findByEmail(user.getEmail()) != null) {
+                return ResponseEntity.badRequest().body(createErrorResponse("Email already exists"));
             }
-
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
-            user.setFollowedUsers(new ArrayList<>());
-            user.setSource(RegistrationSource.CREDENTIAL);
-            User savedUser = userRepository.save(user);
-            UserDTO savedUserDTO = new UserDTO();
-            BeanUtils.copyProperties(savedUser, savedUserDTO);
-            return new ResponseEntity<>("Register Successfully", HttpStatus.OK);
+            userRepository.save(user);
+            return ResponseEntity.ok().body(createSuccessResponse("User created successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(createErrorResponse("Error creating user: " + e.getMessage()));
         }
-
-        if(Objects.equals(user.getSource(), RegistrationSource.GOOGLE)){
-
-            String email = user.getEmail();
-            if (userRepository.existsByEmail(email)) {
-                User googleUser = userRepository.findByEmail(email);
-                UserResDTO userDto = new UserResDTO();
-                BeanUtils.copyProperties(googleUser, userDto);
-                return  new ResponseEntity<>(userDto, HttpStatus.OK);
-            }
-
-            User googleUser = new User();
-            googleUser.setName(user.getName());
-            googleUser.setEmail(user.getEmail());
-            googleUser.setProfileImage(user.getProfileImage());
-            googleUser.setSource(RegistrationSource.GOOGLE);
-            try {
-                userRepository.save(googleUser);
-                UserResDTO userDto = new UserResDTO();
-                BeanUtils.copyProperties(googleUser, userDto);
-                return new ResponseEntity<>(userDto, HttpStatus.OK);
-            } catch (DataIntegrityViolationException e) {
-                return new ResponseEntity<>("Server Error", HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-        }
-
-        return null;
     }
 
     @Override
     public UserDTO getUserById(String userId) {
-        Optional<User> optionalUser = userRepository.findById(userId);
-        if (optionalUser.isPresent()) {
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
             UserDTO userDTO = new UserDTO();
-            BeanUtils.copyProperties(optionalUser.get(), userDTO);
+            userDTO.setId(user.getId());
+            userDTO.setName(user.getName());
+            userDTO.setEmail(user.getEmail());
+            userDTO.setProfileImage(user.getProfileImage());
+            userDTO.setMobileNumber(user.getMobileNumber());
+            userDTO.setSource(user.getSource().toString());
+            userDTO.setFollowedUsers(user.getFollowedUsers());
+            userDTO.setFollowingUsers(user.getFollowingUsers());
+            userDTO.setFollowersCount(user.getFollowersCount());
+            userDTO.setFollowingCount(user.getFollowingCount());
             return userDTO;
         }
         return null;
@@ -87,70 +75,141 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<UserDTO> getAllUsers() {
         List<User> users = userRepository.findAll();
-        List<UserDTO> userDTOs = new ArrayList<>();
-        for (User user : users) {
-            UserDTO userDTO = new UserDTO();
-            BeanUtils.copyProperties(user, userDTO);
-            userDTOs.add(userDTO);
-        }
-        return userDTOs;
+        return users.stream()
+                .map(user -> {
+                    UserDTO userDTO = new UserDTO();
+                    userDTO.setId(user.getId());
+                    userDTO.setName(user.getName());
+                    userDTO.setEmail(user.getEmail());
+                    userDTO.setProfileImage(user.getProfileImage());
+                    userDTO.setMobileNumber(user.getMobileNumber());
+                    userDTO.setSource(user.getSource().toString());
+                    userDTO.setFollowedUsers(user.getFollowedUsers());
+                    userDTO.setFollowingUsers(user.getFollowingUsers());
+                    userDTO.setFollowersCount(user.getFollowersCount());
+                    userDTO.setFollowingCount(user.getFollowingCount());
+                    return userDTO;
+                })
+                .toList();
     }
 
     @Override
     public ResponseEntity<Object> followUser(String userId, String followedUserId) {
         try {
-            User user= userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("User not found with id " + userId));
+            Optional<User> userOptional = userRepository.findById(userId);
+            Optional<User> followedUserOptional = userRepository.findById(followedUserId);
 
-            User followUser = userRepository.findById(followedUserId)
-                    .orElseThrow(() -> new RuntimeException("User not found with id: " + followedUserId));
-
-            if (user.getFollowedUsers() == null) {
-                user.setFollowedUsers(new ArrayList<>());
+            if (userOptional.isEmpty() || followedUserOptional.isEmpty()) {
+                return ResponseEntity.badRequest().body(createErrorResponse("User not found"));
             }
 
-            if (followUser.getFollowingUsers() == null) {
-                followUser.setFollowingUsers(new ArrayList<>());
+            User user = userOptional.get();
+            User followedUser = followedUserOptional.get();
+
+            if (user.getFollowingUsers() == null) {
+                user.setFollowingUsers(new ArrayList<>());
             }
 
-
-            if (user.getFollowedUsers().contains(followedUserId)) {
-                user.getFollowedUsers().remove(followedUserId);
-                followUser.getFollowingUsers().remove(userId);
-                user.setFollowersCount(user.getFollowersCount() - 1);
-                followUser.setFollowingCount(followUser.getFollowingCount() -1);
+            if (user.getFollowingUsers().contains(followedUserId)) {
+                user.getFollowingUsers().remove(followedUserId);
                 userRepository.save(user);
-                userRepository.save(followUser);
-                return new ResponseEntity<>(user, HttpStatus.OK);
+                return ResponseEntity.ok().body(createSuccessResponse("User unfollowed successfully"));
             } else {
-                user.getFollowedUsers().add(followedUserId);
-                followUser.getFollowingUsers().add(userId);
-                user.setFollowersCount(user.getFollowersCount() + 1);
-                followUser.setFollowingCount(followUser.getFollowingCount() + 1);
+                user.getFollowingUsers().add(followedUserId);
                 userRepository.save(user);
-                userRepository.save(followUser);
-                return new ResponseEntity<>(user, HttpStatus.OK);
+                return ResponseEntity.ok().body(createSuccessResponse("User followed successfully"));
             }
-        } catch (RuntimeException e) {
-            e.printStackTrace();
-            return new ResponseEntity<>("Server Error", HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(createErrorResponse("Error following user: " + e.getMessage()));
         }
     }
 
-
     @Override
     public ResponseEntity<Object> loginUser(String email, String password) {
-        User user = userRepository.findByEmail(email);
-
-        if (user == null) {
-            return new ResponseEntity<>("Invalid password or email", HttpStatus.UNAUTHORIZED);
+        try {
+            User user = userRepository.findByEmail(email);
+            if (user == null) {
+                return ResponseEntity.badRequest().body(createErrorResponse("User not found"));
+            }
+            if (!user.getPassword().equals(password)) {
+                return ResponseEntity.badRequest().body(createErrorResponse("Invalid password"));
+            }
+            UserDTO userDTO = new UserDTO();
+            userDTO.setId(user.getId());
+            userDTO.setName(user.getName());
+            userDTO.setEmail(user.getEmail());
+            userDTO.setProfileImage(user.getProfileImage());
+            userDTO.setMobileNumber(user.getMobileNumber());
+            userDTO.setSource(user.getSource().toString());
+            userDTO.setFollowedUsers(user.getFollowedUsers());
+            userDTO.setFollowingUsers(user.getFollowingUsers());
+            userDTO.setFollowersCount(user.getFollowersCount());
+            userDTO.setFollowingCount(user.getFollowingCount());
+            return ResponseEntity.ok().body(createSuccessResponse(userDTO));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(createErrorResponse("Error logging in: " + e.getMessage()));
         }
-        if (passwordEncoder.matches(password, user.getPassword())) {
-            UserResDTO userDto = new UserResDTO();
-            BeanUtils.copyProperties(user, userDto);
-            return new ResponseEntity<>(userDto, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Invalid password or email", HttpStatus.UNAUTHORIZED);
+    }
+    @Override 
+    public ResponseEntity<Object> uploadProfileImage(String userId, MultipartFile image) {
+        try {
+            System.out.println("Received image upload request for user: " + userId);
+            System.out.println("Image details - Name: " + image.getOriginalFilename() + 
+                             ", Size: " + image.getSize() + 
+                             ", Content Type: " + image.getContentType());
+
+            if (image == null || image.isEmpty()) {
+                System.out.println("No image file provided");
+                return ResponseEntity.badRequest().body(createErrorResponse("No image file provided"));
+            }
+
+            if (image.getSize() > 5 * 1024 * 1024) { // 5MB limit
+                System.out.println("Image size exceeds limit: " + image.getSize());
+                return ResponseEntity.badRequest().body(createErrorResponse("Image size exceeds 5MB limit"));
+            }
+
+            String contentType = image.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                System.out.println("Invalid content type: " + contentType);
+                return ResponseEntity.badRequest().body(createErrorResponse("Invalid file type. Only images are allowed"));
+            }
+
+            Optional<User> userOptional = userRepository.findById(userId);
+            if (userOptional.isEmpty()) {
+                System.out.println("User not found: " + userId);
+                return ResponseEntity.badRequest().body(createErrorResponse("User not found"));
+            }
+
+            User user = userOptional.get();
+            System.out.println("Converting image to base64...");
+            String base64Image = Base64.getEncoder().encodeToString(image.getBytes());
+            System.out.println("Base64 conversion successful, length: " + base64Image.length());
+            
+            user.setProfileImage(base64Image);
+            System.out.println("Saving user with new profile image...");
+            userRepository.save(user);
+            System.out.println("User saved successfully");
+
+            UserDTO userDTO = new UserDTO();
+            userDTO.setId(user.getId());
+            userDTO.setName(user.getName());
+            userDTO.setEmail(user.getEmail());
+            userDTO.setProfileImage(user.getProfileImage());
+            userDTO.setMobileNumber(user.getMobileNumber());
+            userDTO.setSource(user.getSource().toString());
+            userDTO.setFollowedUsers(user.getFollowedUsers());
+            userDTO.setFollowingUsers(user.getFollowingUsers());
+            userDTO.setFollowersCount(user.getFollowersCount());
+            userDTO.setFollowingCount(user.getFollowingCount());
+
+            System.out.println("Returning success response");
+            return ResponseEntity.ok().body(createSuccessResponse(userDTO));
+        } catch (IOException e) {
+            System.out.println("Error processing image: " + e.getMessage());
+            return ResponseEntity.badRequest().body(createErrorResponse("Error processing image: " + e.getMessage()));
+        } catch (Exception e) {
+            System.out.println("Unexpected error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(createErrorResponse("Error uploading image: " + e.getMessage()));
         }
     }
 }
