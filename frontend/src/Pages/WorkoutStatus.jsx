@@ -4,7 +4,7 @@ import axios from "axios";
 import { AiFillDelete, AiFillEdit } from "react-icons/ai";
 import { useNavigate } from "react-router-dom";
 import backgroundImg from '../images/statusBck.jpg';
-
+// WorkoutStatus component that displays and manages workout statuses
 const WorkoutStatus = ({ user }) => {
   const [workoutStatuses, setWorkoutStatuses] = useState([]);
 
