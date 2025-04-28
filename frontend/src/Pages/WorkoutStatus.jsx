@@ -23,7 +23,7 @@ const WorkoutStatus = ({ user }) => {
     };
     fetchWorkoutStatuses();
   }, []);
-
+  // Function to delete a specific workout status
   const deleteWorkOut = async (status) => {
     try {
       await axios.delete(
