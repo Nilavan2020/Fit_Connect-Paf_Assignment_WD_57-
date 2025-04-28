@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";// Import necessary libraries and modules
-import backgroundImg from "../images/mealBck1.jpg";
+import backgroundImg from "../images/mealBck1.jpg";// Background image for the page
 import { TERipple } from "tw-elements-react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
