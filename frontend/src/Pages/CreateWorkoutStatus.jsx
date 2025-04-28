@@ -14,7 +14,7 @@ const CreateWorkouStatus = () => {
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
   const [user, setUser] = useState({});
-  const [editStatus, setEditStatus] = useState(false);
+  const [editStatus, setEditStatus] = useState(false); //
 
   const { statusId } = useParams();
 
