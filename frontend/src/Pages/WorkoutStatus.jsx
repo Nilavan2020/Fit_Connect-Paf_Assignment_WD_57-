@@ -9,7 +9,7 @@ const WorkoutStatus = ({ user }) => {
   const [workoutStatuses, setWorkoutStatuses] = useState([]);
 
   const navigate = useNavigate();
-
+// Fetch workout statuses from backend when component mounts
   useEffect(() => {
     const fetchWorkoutStatuses = async () => {
       try {
