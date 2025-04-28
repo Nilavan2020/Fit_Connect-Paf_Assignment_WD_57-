@@ -29,7 +29,7 @@ const MealPlan = ({ user }) => {
     try {
       await axios.delete(`http://localhost:8080/mealPlans/${mealPlan.mealPlanId}`);
       setMealPlans(prevMealPlans => prevMealPlans.filter(mp => mp.mealPlanId !== mealPlan.mealPlanId));
-      toast.success("Meal Plan deleted successfully");
+      toast.success("Meal Plan deleted successfully");// Save the fetched meal plans in state
     } catch (error) {
       toast.error("Failed to delete Meal Plan");
     }
