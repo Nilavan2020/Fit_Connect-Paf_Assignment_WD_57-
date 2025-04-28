@@ -39,7 +39,7 @@ const WorkoutStatus = ({ user }) => {
       toast.error("Failed to delete workout status");
     }
   };
-
+  // Function to navigate to the edit page with the selected status ID
   const navigateEditPage = (status) => {
     navigate(`/CreateWorkoutStatus/${status.statusId}`);
   };
