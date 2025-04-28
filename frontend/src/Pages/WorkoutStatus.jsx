@@ -42,7 +42,7 @@ const WorkoutStatus = ({ user }) => {
   // Function to navigate to the edit page with the selected status ID
   const navigateEditPage = (status) => {
     navigate(`/CreateWorkoutStatus/${status.statusId}`);
-  };
+  };// Function to navigate to the create workout status page
 
   return (
     <div
