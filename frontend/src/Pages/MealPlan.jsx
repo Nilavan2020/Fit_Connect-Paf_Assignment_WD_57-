@@ -13,7 +13,7 @@ const MealPlan = ({ user }) => {
   useEffect(() => {
     const fetchMealPlans = async () => {
       try {
-        const res = await axios.get("http://localhost:8080/mealPlans");
+        const res = await axios.get("http://localhost:8080/mealPlans"); //
         if (res.status === 200) {
           setMealPlans(res.data);
         }
