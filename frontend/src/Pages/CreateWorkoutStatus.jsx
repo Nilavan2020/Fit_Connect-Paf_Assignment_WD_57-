@@ -25,7 +25,7 @@ const CreateWorkouStatus = () => {
           `http://localhost:8080/workoutStatus/${statusId}`
         );
         setWeight(data.weight);
-        setDistance(data.distance);
+        setDistance(data.distance);//
         setPushups(data.pushUps);
         setDescription(data.description);
         setDate(data.date);
