@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { AiFillDelete, AiFillEdit } from "react-icons/ai";
-//import
+// Main functional component
 const MealPlan = ({ user }) => {
   const [mealPlans, setMealPlans] = useState([]);
   const navigate = useNavigate();
